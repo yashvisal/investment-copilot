@@ -7,7 +7,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { elapsed, hostname, timeOfDay, usd } from "@/lib/format";
 import { CLASSIFICATION_ORDER } from "@/lib/parallel/classify";
-import { CLASS_LABEL, DECISION_LABEL, Empty, Meta, Page, Spinner, cx } from "./ui";
+import { CLASS_LABEL, DECISION_LABEL, Empty, Meta, Page, Spinner, Wire, cx, type WireNode } from "./ui";
 import { Nav } from "./nav";
 
 type StageKey = "discover" | "prioritize" | "screen" | "diligence";
@@ -46,18 +46,18 @@ export function RunView({ runId }: { runId: Id<"runs"> }) {
     <>
       <Nav />
       <Page>
-        <h1 className="mt-10 text-heading-sm font-medium leading-[1.23] text-ink-black">{run.thesis}</h1>
+        <h1 className="t-title text-ink-black">{run.thesis}</h1>
         <Progress run={run} now={now} matched={matched.length} />
-        {run.error && <p className="mt-6 text-body text-status-red">{run.error}</p>}
+        {run.error && <p className="t-small mt-6 text-status-red">{run.error}</p>}
         <CompanyList runId={run._id} companies={matched} status={run.status} />
         {unmatched.length > 0 && (
-          <details className="mt-10">
-            <summary className="cursor-pointer list-none font-mono text-ui text-slate hover:text-ink-black">
-              {unmatched.length} more evaluated by FindAll and not matched
+          <details className="mt-8">
+            <summary className="t-mono cursor-pointer list-none text-slate hover:text-ink-black">
+              {unmatched.length} more evaluated at discovery and not matched
             </summary>
             <ul className="mt-3 space-y-1.5">
               {unmatched.map((c) => (
-                <li key={c._id} className="flex items-baseline justify-between gap-4 text-small text-graphite">
+                <li key={c._id} className="t-small flex items-baseline justify-between gap-4 text-graphite">
                   <span>
                     {c.name} <span className="text-slate">{hostname(c.url)}</span>
                   </span>
@@ -98,47 +98,44 @@ function failedCondition(c: Doc<"companies">): string | null {
 function Progress({ run, now, matched }: { run: Doc<"runs">; now: number; matched: number }) {
   const activeKey: StageKey | null =
     run.status === "discovering" ? "discover" : run.status === "prioritizing" ? "prioritize" : run.status === "screening" ? "screen" : run.status === "diligencing" ? "diligence" : null;
-  const activeIdx = activeKey ? STAGE_ORDER.indexOf(activeKey) : run.status === "complete" ? 4 : -1;
+  const activeIdx = activeKey ? STAGE_ORDER.indexOf(activeKey) : run.status === "complete" ? 5 : -1;
   const stats = activeKey ? run.stages[activeKey] : null;
+  const s = run.stages;
 
-  let line: string;
-  if (run.status === "complete") {
-    const s = run.stages;
-    line = `Complete. ${s.discover.count ?? 0} discovered, ${s.screen.count ?? 0} screened, ${s.diligence.count ?? 0} diligenced.`;
-  } else if (run.status === "failed") {
-    line = "Failed.";
-  } else if (activeKey === "discover") {
-    line = `Discovering with FindAll. ${matched} of ${run.matchLimit} matched, ${run.generatedCount ?? 0} evaluated.`;
-  } else if (activeKey === "prioritize") {
-    line = "Ranking matches on FindAll's evidence.";
-  } else if (activeKey === "screen") {
-    line = `Screening ${run.stages.prioritize.count ?? 0} companies on core. ${stats?.count ?? 0} done.`;
-  } else if (activeKey === "diligence") {
-    line = `Diligence on pro for the finalists. ${stats?.count ?? 0} of ${run.diligenceLimit} done.`;
-  } else {
-    line = "Queued.";
+  function state(i: number): WireNode["state"] {
+    if (run.status === "complete") return "done";
+    if (i < activeIdx) return "done";
+    if (i === activeIdx) return "active";
+    return "pending";
   }
 
+  const nodes: WireNode[] = [
+    { label: "Discover", state: state(0), value: s.discover.startedAt ? `${s.discover.count ?? matched} · ${usd(s.discover.spendUsd ?? 0)}` : `${run.matchLimit} cap` },
+    { label: "Prioritize", state: state(1), value: s.prioritize.startedAt ? `${s.prioritize.count ?? 0} · $0` : undefined },
+    { label: "Screen", state: state(2), value: s.screen.startedAt ? `${s.screen.count ?? 0} · ${usd(s.screen.spendUsd ?? 0)}` : undefined },
+    { label: "Diligence", state: state(3), value: s.diligence.startedAt ? `${s.diligence.count ?? 0} · ${usd(s.diligence.spendUsd ?? 0)}` : undefined },
+    { label: "Decide", state: run.status === "complete" ? "active" : "pending", value: run.status === "complete" ? "your call" : undefined },
+  ];
+
+  let line: string;
+  if (run.status === "complete") line = `Complete. ${s.discover.count ?? 0} discovered, ${s.screen.count ?? 0} screened, ${s.diligence.count ?? 0} diligenced. Your call on the finalists.`;
+  else if (run.status === "failed") line = "The run stopped. See the log below.";
+  else if (activeKey === "discover") line = `Discovering. ${matched} of ${run.matchLimit} matched, ${run.generatedCount ?? 0} candidates evaluated.`;
+  else if (activeKey === "prioritize") line = "Ranking matches on their discovery evidence.";
+  else if (activeKey === "screen") line = `Screening ${s.prioritize.count ?? 0} companies at once. ${stats?.count ?? 0} done.`;
+  else if (activeKey === "diligence") line = `Deep briefs running for ${run.diligenceLimit} finalists at once. ${stats?.count ?? 0} done.`;
+  else line = "Queued.";
+
   return (
-    <div className="mt-6">
-      <div className="flex h-px w-full gap-1">
-        {STAGE_ORDER.map((k, i) => (
-          <div
-            key={k}
-            className={cx(
-              "h-px flex-1",
-              i < activeIdx ? "bg-ink-black" : i === activeIdx ? "bg-signal-orange" : "bg-hairline",
-            )}
-          />
-        ))}
-      </div>
-      <p className="mt-3 flex items-baseline gap-2 text-body text-ink-black">
+    <div className="mt-10">
+      <Wire nodes={nodes} />
+      <p className="t-body mt-8 flex items-baseline gap-2 text-ink-black">
         {activeKey && <Spinner />}
         <span>{line}</span>
       </p>
-      <Meta className="mt-1 tnum">
+      <Meta className="tnum mt-1">
         {activeKey && stats?.startedAt ? `${STAGE_LABEL[activeKey]} for ${elapsed(stats.startedAt, undefined, now)} · ` : ""}
-        spent {usd(run.spendUsd)} of {usd(run.estimatedCostUsd)} estimated
+        {usd(run.spendUsd)} spent of {usd(run.estimatedCostUsd)} estimated
       </Meta>
     </div>
   );
@@ -161,19 +158,19 @@ function CompanyList({ runId, companies, status }: { runId: Id<"runs">; companie
   );
 
   if (rows.length === 0) {
-    return <Empty>{status === "discovering" ? "Matches appear here as FindAll confirms them." : "No matched companies."}</Empty>;
+    return <Empty>{status === "discovering" ? "Matches appear here as discovery confirms them." : "No matched companies."}</Empty>;
   }
 
   return (
-    <ol className="mt-10 divide-y divide-hairline border-t border-hairline">
+    <ol className="mt-12 divide-y divide-hairline border-y border-hairline">
       {rows.map((c) => (
         <li key={c._id}>
           <Link href={`/runs/${runId}/companies/${c._id}`} className="group block py-5">
             <div className="flex items-baseline justify-between gap-6">
-              <span className="text-base font-medium text-ink-black group-hover:text-schematic-blue">{c.name}</span>
-              <span className="shrink-0 font-mono text-ui text-slate">{statusWord(c)}</span>
+              <span className="t-body font-medium text-ink-black group-hover:text-schematic-blue">{c.name}</span>
+              <span className="t-mono shrink-0 text-slate">{statusWord(c)}</span>
             </div>
-            <p className="mt-1 max-w-[620px] text-body leading-[1.5] text-graphite">{why(c)}</p>
+            <p className="t-small mt-1 max-w-[600px] text-graphite">{why(c)}</p>
             {c.decision && <Meta className="mt-1">Your call: {DECISION_LABEL[c.decision]}</Meta>}
           </Link>
         </li>
@@ -215,21 +212,21 @@ function EventLog({ events, active }: { events: Doc<"events">[]; active: boolean
   }, [events.length, open]);
   const last = events[events.length - 1];
   return (
-    <div className="mt-12 border-t border-hairline pt-4">
+    <div className="mt-10 border-t border-hairline pt-4">
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-baseline justify-between gap-4 text-left">
-        <span className="font-mono text-ui text-slate hover:text-ink-black">{open ? "Hide pipeline log" : "Pipeline log"}</span>
+        <span className="t-mono text-slate hover:text-ink-black">{open ? "Hide log" : "Log"}</span>
         {!open && last && (
-          <span className="min-w-0 flex-1 truncate font-mono text-ui text-slate">
+          <span className="t-mono min-w-0 flex-1 truncate text-slate">
             {active && <Spinner />} {last.message}
           </span>
         )}
       </button>
       {open && (
-        <div ref={ref} className="mt-3 max-h-[420px] overflow-y-auto bg-ink-black p-4 font-mono text-ui leading-[1.6] text-cream-paper/80">
+        <div ref={ref} className="t-mono mt-3 max-h-[420px] overflow-y-auto bg-ink-black p-4 text-pure-white/80">
           {events.map((e) => (
             <div key={e._id} className="grid grid-cols-[72px_1fr] gap-3">
               <span className="tnum text-slate">{timeOfDay(e.at)}</span>
-              <span className={cx(e.level === "error" ? "text-signal-orange" : e.level === "info" ? "text-cream-paper" : "text-cream-paper/70")}>{e.message}</span>
+              <span className={cx(e.level === "error" ? "text-signal-orange" : e.level === "info" ? "text-pure-white" : "text-pure-white/70")}>{e.message}</span>
             </div>
           ))}
         </div>

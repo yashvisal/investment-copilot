@@ -89,3 +89,50 @@ body {
 @utility tnum {
   font-variant-numeric: tabular-nums;
 }
+
+/* One type scale. Every text element uses exactly one of these. */
+@utility t-display {
+  font-size: 40px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 500;
+}
+@utility t-title {
+  font-size: 24px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+}
+@utility t-lead {
+  font-size: 17px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+@utility t-body {
+  font-size: 15px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+@utility t-small {
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+@utility t-mono {
+  font-family: var(--font-ftsystemmono);
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  font-weight: 400;
+}
+@utility t-mono-up {
+  font-family: var(--font-ftsystemmono);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

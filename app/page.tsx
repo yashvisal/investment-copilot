@@ -7,12 +7,11 @@ export default function Home() {
     <>
       <Nav />
       <Page>
-        <h1 className="mt-16 max-w-[620px] text-heading font-medium leading-[1.11] tracking-[0.012em] text-ink-black">
-          A thesis in. The few companies worth a deeper look out.
-        </h1>
-        <p className="mt-4 max-w-[560px] text-base leading-[1.6] text-graphite">
-          Parallel discovers and researches. Spend rises only as conviction does. Every claim carries its sources, its confidence,
-          and an honest <span className="text-schematic-blue">unknown</span> when the web does not know.
+        <h1 className="t-display max-w-[600px] text-ink-black">A thesis in. The few companies worth a deeper look out.</h1>
+        <p className="t-lead mt-5 max-w-[560px] text-graphite">
+          Discovery, screening, and diligence on the open web, spending more only on the companies that earn it. Every claim
+          carries its sources, its confidence, and an honest <span className="text-schematic-blue">unknown</span> when the web
+          does not know.
         </p>
         <div className="mt-16">
           <ThesisComposer />

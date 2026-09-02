@@ -85,7 +85,7 @@ export const startDiscover = internalAction({
         stage: "discover",
         stats: { startedAt: Date.now(), count: 0, spendUsd: 0 },
       });
-      await log(ctx, runId, "discover", "info", `Starting FindAll (${run.generator}) with ${run.matchConditions.length} match conditions, limit ${run.matchLimit}.`);
+      await log(ctx, runId, "discover", "info", `Starting discovery (${run.generator}) with ${run.matchConditions.length} match conditions, limit ${run.matchLimit}.`);
 
       const created = await client.beta.findall.create({
         objective: run.objective,
@@ -96,7 +96,7 @@ export const startDiscover = internalAction({
         metadata: { runId },
       });
       await ctx.runMutation(internal.runs.patch, { runId, findallId: created.findall_id });
-      await log(ctx, runId, "discover", "progress", `FindAll run ${created.findall_id} queued.`);
+      await log(ctx, runId, "discover", "progress", `Discovery run ${created.findall_id} queued.`);
       await ctx.scheduler.runAfter(POLL_MS, internal.pipeline.pollDiscover, { runId });
     } catch (err) {
       await fail(ctx, runId, "discover", err);
@@ -163,7 +163,7 @@ export const pollDiscover = internalAction({
       await log(ctx, runId, "discover", "info", `Discovery finished (${reason}). ${matched} matched of ${generated} evaluated. Spend $${spend.toFixed(2)}.`);
 
       if (matched === 0) {
-        await ctx.runMutation(internal.runs.setStatus, { runId, status: "failed", error: "FindAll found no matches. Try a broader thesis." });
+        await ctx.runMutation(internal.runs.setStatus, { runId, status: "failed", error: "Discovery found no matches. Try a broader thesis." });
         return null;
       }
       await ctx.scheduler.runAfter(0, internal.pipeline.prioritize, { runId });
@@ -221,7 +221,7 @@ export const prioritize = internalAction({
         stage: "prioritize",
         stats: { completedAt: Date.now(), count: ranked.length, spendUsd: 0 },
       });
-      await log(ctx, runId, "prioritize", "info", `Prioritized ${ranked.length} of ${companies.filter((c) => c.matchStatus === "matched").length} matched companies for screening using FindAll evidence only.`);
+      await log(ctx, runId, "prioritize", "info", `Prioritized ${ranked.length} of ${companies.filter((c) => c.matchStatus === "matched").length} matched companies for screening using discovery evidence only.`);
       await ctx.scheduler.runAfter(0, internal.pipeline.startScreen, { runId });
     } catch (err) {
       await fail(ctx, runId, "prioritize", err);
