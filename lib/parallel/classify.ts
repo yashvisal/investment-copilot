@@ -2,6 +2,8 @@ import type { Claim, Classification } from "./types";
 
 const LATE_STAGE_ROUNDS = /series\s*[c-h]|growth|pre-ipo|mezzanine|late[- ]stage/i;
 const LATE_STAGE_TOTAL_USD_M = 150;
+const HARD_DISQUALIFIER =
+  /\b(acquired|acquisition by|shut ?down|ceased operations|publicly[- ]traded|public company|\bipo\b|series\s*[c-h]\b|growth[- ]stage|growth (round|investment)|late[- ]stage|consumer (product|app)|vertical (ai )?(application|app|workflow|solution)|not (an? )?(ai )?infrastructure|business unit|subsidiary|division of|more than \$?150|over \$?150)/i;
 
 export interface ClassificationResult {
   classification: Classification;
@@ -26,10 +28,15 @@ export function classifyScreen(claims: Claim[]): ClassificationResult {
   const momentum = by.get("recent_momentum");
   const sells = by.get("what_it_sells");
 
-  // Hard passes.
-  if (concern && !concern.isUnknown && concern.citationCount > 0) {
-    reasons.push(`Thesis concern: ${truncate(concern.valueText, 120)}`);
-    return { classification: "pass", reasons, strength: 0 };
+  // Hard passes. A concern only disqualifies when it names a real disqualifier;
+  // soft concerns (stale momentum, thin data) downgrade instead of passing.
+  let softConcern = false;
+  if (concern && !concern.isUnknown) {
+    if (HARD_DISQUALIFIER.test(concern.valueText) && concern.citationCount > 0) {
+      reasons.push(`Thesis concern: ${truncate(concern.valueText, 120)}`);
+      return { classification: "pass", reasons, strength: 0 };
+    }
+    softConcern = true;
   }
   const roundText = round && !round.isUnknown ? String(round.value) : "";
   if (LATE_STAGE_ROUNDS.test(roundText)) {
@@ -56,7 +63,7 @@ export function classifyScreen(claims: Claim[]): ClassificationResult {
 
   if (tractionStrong) {
     strength += 2;
-    reasons.push(`Enterprise traction at ${traction!.confidence} confidence, ${traction!.citationCount} sources`);
+    reasons.push(`Enterprise traction at ${traction!.confidence} confidence, ${traction!.citationCount} source${traction!.citationCount === 1 ? "" : "s"}`);
   } else if (tractionWeak) {
     strength += 1;
     reasons.push("Enterprise traction claimed but thinly sourced");
@@ -93,7 +100,12 @@ export function classifyScreen(claims: Claim[]): ClassificationResult {
     reasons.push(`${unknowns} of ${claims.length} fields unknown`);
   }
 
-  if (tractionStrong && momentumStrong) {
+  if (softConcern) {
+    strength -= 1;
+    reasons.push(`Concern noted, not disqualifying: ${truncate(concern!.valueText, 100)}`);
+  }
+
+  if (tractionStrong && momentumStrong && !softConcern) {
     return { classification: "high_priority", reasons, strength };
   }
   if (tractionStrong || momentumStrong || tractionWeak) {

@@ -59,7 +59,7 @@ export const SCREEN_OUTPUT_SCHEMA = {
       description: "Year founded as a four-digit number. If unknown, return null.",
     },
     thesis_concern: nullableString(
-      "Any concrete reason this company may violate the thesis: acquired, shut down, late-stage (Series C or later, or more than $150M raised), public company, primarily a consumer product, not actually AI infrastructure, or a business unit rather than a company. Explain briefly. If no concern, return null.",
+      "Report ONLY a hard disqualifier, and only if credible sources show it: the company was acquired or shut down; it is publicly traded; its latest round is Series C or later or it has raised more than $150M; it primarily sells a consumer product; it is a vertical AI application rather than AI infrastructure; or it is a business unit rather than an independent company. Name which disqualifier applies in the first sentence. Do NOT report weak traction, stale momentum, missing data, or uncertainty here; those belong in the other fields. If no hard disqualifier applies, return null.",
     ),
   },
   required: [
