@@ -136,3 +136,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+html {
+  scrollbar-gutter: stable;
+}
+:focus-visible {
+  outline: 2px solid var(--color-schematic-blue);
+  outline-offset: 2px;
+}

@@ -1,15 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { hostname, millions, usd } from "@/lib/format";
+import { orderCompanies } from "@/lib/order";
 import { DILIGENCE_SECTIONS } from "@/lib/parallel/specs";
-import type { Decision } from "@/lib/parallel/types";
 import { Nav } from "./nav";
-import { Button, CLASS_LABEL, DECISION_LABEL, Empty, Meta, Page, Spinner, cx } from "./ui";
+import { Button, ButtonLink, CLASS_LABEL, DecisionControl, Empty, Eyebrow, Meta, Page, Spinner, cx } from "./ui";
 
 type Claim = Doc<"claims">;
 
@@ -30,6 +29,12 @@ export function CompanyView({ runId, companyId }: { runId: Id<"runs">; companyId
   const run = useQuery(api.runs.get, { runId });
   const company = useQuery(api.companies.get, { companyId });
   const claims = useQuery(api.companies.claimsFor, { companyId });
+  const siblings = useQuery(api.companies.forRun, { runId });
+
+  const ordered = useMemo(() => orderCompanies(siblings ?? []), [siblings]);
+  const idx = ordered.findIndex((c) => c._id === companyId);
+  const prev = idx > 0 ? ordered[idx - 1] : null;
+  const next = idx >= 0 && idx < ordered.length - 1 ? ordered[idx + 1] : null;
 
   if (company === undefined || run === undefined) return <Shell>Loading…</Shell>;
   if (!company || !run) return <Shell>Company not found.</Shell>;
@@ -38,49 +43,135 @@ export function CompanyView({ runId, companyId }: { runId: Id<"runs">; companyId
   const discover = all.filter((c) => c.stage === "discover");
   const screen = all.filter((c) => c.stage === "screen");
   const diligence = all.filter((c) => c.stage === "diligence");
-  const memo = diligence.length > 0 ? diligence : screen;
+  const isDiligence = diligence.length > 0;
+  const memo = isDiligence ? diligence : screen;
   const sources = collectSources([...discover, ...screen, ...diligence]);
   const indexOf = (url: string) => sources.findIndex((s) => s.url === url) + 1;
+  const by = new Map(memo.map((c) => [c.field, c]));
+  const order = isDiligence ? DILIGENCE_SECTIONS : SCREEN_ORDER;
+  const sections = order.map((f) => by.get(f)).filter(Boolean) as Claim[];
+
+  const researched = [...screen, ...diligence];
+  const supported = researched.filter((c) => c.supported).length;
+  const unknown = researched.filter((c) => c.isUnknown).length;
+  const conflicting = researched.filter((c) => c.conflicting).length;
+  const unsupported = researched.filter((c) => !c.isUnknown && c.citationCount === 0).length;
 
   return (
     <>
       <Nav />
-      <Page>
-        <Link href={`/runs/${runId}`} className="t-mono inline-block text-slate hover:text-ink-black">
-          ← Run
-        </Link>
+      <Page width="wide">
+        {/* Run bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <ButtonLink href={`/runs/${runId}`} variant="ghost">
+            ← Back to run
+          </ButtonLink>
+          <div className="flex items-center gap-2">
+            {prev ? (
+              <ButtonLink href={`/runs/${runId}/companies/${prev._id}`} variant="ghost">
+                ← {prev.name}
+              </ButtonLink>
+            ) : null}
+            {next ? (
+              <ButtonLink href={`/runs/${runId}/companies/${next._id}`} variant="ghost">
+                {next.name} →
+              </ButtonLink>
+            ) : null}
+          </div>
+        </div>
 
-        <h1 className="t-display mt-4 text-ink-black">{company.name}</h1>
-        <Meta className="mt-2">
-          <a href={company.url} target="_blank" rel="noreferrer" className="text-schematic-blue hover:underline">
-            {hostname(company.url)}
-          </a>
-          {" · "}
-          {statusLine(company)}
-        </Meta>
-        {company.description && <p className="t-lead mt-5 max-w-[600px] text-graphite">{company.description}</p>}
+        {/* Header */}
+        <div className="mt-10 max-w-[760px]">
+          <h1 className="t-display text-ink-black">{company.name}</h1>
+          <Meta className="mt-3">
+            <a href={company.url} target="_blank" rel="noreferrer" className="text-schematic-blue hover:underline">
+              {hostname(company.url)}
+            </a>
+            {" · "}
+            {statusLine(company)}
+          </Meta>
+          {company.description && <p className="t-lead mt-5 text-graphite">{company.description}</p>}
+        </div>
 
-        <DecisionRow company={company} />
+        {isDiligence && <Facts claims={diligence} />}
 
-        {company.diligence?.status === "completed" && <Facts claims={diligence} />}
+        <div className="mt-12 grid grid-cols-1 gap-12 lg:grid-cols-[220px_1fr]">
+          {/* Side rail */}
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <Eyebrow>Your call</Eyebrow>
+            <div className="mt-3">
+              <DecisionControl company={company} size="md" />
+            </div>
+            <WatchButton company={company} />
 
-        {memo.length === 0 ? (
-          <Empty>
-            {company.screen && company.screen.status !== "completed" ? (
+            <Eyebrow className="mt-10">Evidence</Eyebrow>
+            <dl className="t-mono mt-3 space-y-1 text-graphite">
+              <Stat k="Supported" v={supported} />
+              <Stat k="Unknown" v={unknown} tone={unknown > 0 ? "muted" : undefined} />
+              <Stat k="Conflicting" v={conflicting} tone={conflicting > 0 ? "amber" : undefined} />
+              <Stat k="Unsupported" v={unsupported} tone={unsupported > 0 ? "red" : undefined} />
+              <Stat k="Sources" v={sources.length} />
+            </dl>
+
+            {sections.length > 0 && (
               <>
-                <Spinner /> Screening on the {company.screen.processor} processor.
+                <Eyebrow className="mt-10">Sections</Eyebrow>
+                <nav className="mt-3 flex flex-col gap-1.5">
+                  {sections.map((c) => (
+                    <a key={c._id} href={`#${c.field}`} className="t-small text-graphite hover:text-ink-black">
+                      {c.label}
+                    </a>
+                  ))}
+                  <a href="#sources" className="t-small text-graphite hover:text-ink-black">
+                    Sources
+                  </a>
+                  <a href="#followup" className="t-small text-graphite hover:text-ink-black">
+                    Ask a follow-up
+                  </a>
+                  {discover.length > 0 && (
+                    <a href="#discovery" className="t-small text-graphite hover:text-ink-black">
+                      Discovery match
+                    </a>
+                  )}
+                </nav>
               </>
-            ) : (
-              "Matched at discovery but not ranked into the screening set, so no research was spent."
             )}
-          </Empty>
-        ) : (
-          <Memo company={company} claims={memo} isDiligence={diligence.length > 0} indexOf={indexOf} />
-        )}
+          </aside>
 
-        <Sources sources={sources} company={company} claims={all} />
-        <Followups company={company} />
-        <Discovery claims={discover} company={company} indexOf={indexOf} />
+          {/* Main */}
+          <div className="min-w-0 max-w-[720px]">
+            {sections.length === 0 ? (
+              <Empty>
+                {company.screen && company.screen.status !== "completed" ? (
+                  <>
+                    <Spinner /> Screening in progress.
+                  </>
+                ) : (
+                  "Matched at discovery but not ranked into the screening set, so no research was spent."
+                )}
+              </Empty>
+            ) : (
+              <article>
+                {!isDiligence && company.screenReasons && (
+                  <p className="t-body mb-10 text-ink-black">
+                    {company.screenClassification && <span className="font-medium">{CLASS_LABEL[company.screenClassification]}. </span>}
+                    {company.screenReasons.join(". ")}.
+                  </p>
+                )}
+                {isDiligence && <Meta className="mb-10">Pre-diligence brief, researched for {usd(0.1)}. Numbers in brackets are sources.</Meta>}
+                <div className="space-y-12">
+                  {sections.map((c) => (
+                    <Section key={c._id} claim={c} indexOf={indexOf} />
+                  ))}
+                </div>
+              </article>
+            )}
+
+            <Sources sources={sources} company={company} />
+            <Followups company={company} />
+            <Discovery claims={discover} company={company} indexOf={indexOf} />
+          </div>
+        </div>
       </Page>
     </>
   );
@@ -97,6 +188,15 @@ function Shell({ children }: { children: string }) {
   );
 }
 
+function Stat({ k, v, tone }: { k: string; v: number; tone?: "muted" | "amber" | "red" }) {
+  return (
+    <div className="flex items-baseline justify-between">
+      <dt className="text-slate">{k}</dt>
+      <dd className={cx("tnum", tone === "amber" && "text-status-amber", tone === "red" && "text-status-red", !tone && "text-ink-black", tone === "muted" && "text-graphite")}>{v}</dd>
+    </div>
+  );
+}
+
 function statusLine(c: Doc<"companies">): string {
   const parts: string[] = [];
   if (c.priorityRank !== undefined) parts.push(`ranked ${c.priorityRank} at discovery`);
@@ -108,48 +208,27 @@ function statusLine(c: Doc<"companies">): string {
 
 /* ------------------------------------------------------------------ */
 
-function DecisionRow({ company }: { company: Doc<"companies"> }) {
-  const setDecision = useMutation(api.companies.setDecision);
+function WatchButton({ company }: { company: Doc<"companies"> }) {
   const watch = useAction(api.pipeline.watchCompany);
-  const [watchMsg, setWatchMsg] = useState<string | null>(null);
-  const [watching, setWatching] = useState(false);
-
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   async function onWatch() {
-    setWatching(true);
+    setBusy(true);
     try {
       const res = await watch({ companyId: company._id });
-      setWatchMsg(res.message);
-      if (!company.decision) await setDecision({ companyId: company._id, decision: "watch" });
+      setMsg(res.message);
     } catch (e) {
-      setWatchMsg(e instanceof Error ? e.message : String(e));
+      setMsg(e instanceof Error ? e.message : String(e));
     } finally {
-      setWatching(false);
+      setBusy(false);
     }
   }
-
   return (
-    <div className="mt-8 border-y border-hairline py-4">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-        <span className="t-small text-graphite">Worth more human research?</span>
-        <div className="flex gap-1">
-          {(["pass", "watch", "deep_diligence"] as Decision[]).map((d) => (
-            <button
-              key={d}
-              onClick={() => setDecision({ companyId: company._id, decision: company.decision === d ? null : d })}
-              className={cx(
-                "t-mono-up h-8 rounded-sm px-3 transition-colors",
-                company.decision === d ? "bg-ink-black text-pure-white" : "text-graphite hover:bg-fog",
-              )}
-            >
-              {DECISION_LABEL[d]}
-            </button>
-          ))}
-        </div>
-        <button onClick={onWatch} disabled={watching} className="t-mono ml-auto text-slate hover:text-ink-black disabled:opacity-40">
-          {watching ? "Requesting…" : company.monitorId ? "Watching weekly" : "Watch weekly"}
-        </button>
-      </div>
-      {watchMsg && <p className="t-small mt-3 text-graphite">{watchMsg}</p>}
+    <div className="mt-3">
+      <Button variant="ghost" onClick={onWatch} disabled={busy} className="w-full">
+        {busy ? "Requesting…" : company.monitorId ? "Watching weekly" : "Watch weekly"}
+      </Button>
+      {msg && <p className="t-small mt-2 text-graphite">{msg}</p>}
     </div>
   );
 }
@@ -162,57 +241,32 @@ function Facts({ claims }: { claims: Claim[] }) {
   const emp = by.get("employee_count");
   const raised = by.get("total_raised_usd_millions");
   const val = by.get("latest_valuation_usd_millions");
-  if (hq && !hq.isUnknown) items.push(["HQ", hq.valueText]);
-  if (founded && !founded.isUnknown) items.push(["Founded", founded.valueText]);
-  if (emp && !emp.isUnknown) items.push(["Team", emp.valueText.split(/[;(]/)[0].trim()]);
-  if (raised && !raised.isUnknown) items.push(["Raised", millions(raised.value)]);
-  if (val && !val.isUnknown) items.push(["Valuation", millions(val.value)]);
-  if (items.length === 0) return null;
+  items.push(["Headquarters", hq && !hq.isUnknown ? hq.valueText : "Unknown"]);
+  items.push(["Founded", founded && !founded.isUnknown ? founded.valueText : "Unknown"]);
+  items.push(["Team", emp && !emp.isUnknown ? emp.valueText.split(/[;(]/)[0].trim() : "Unknown"]);
+  items.push(["Raised", raised && !raised.isUnknown ? millions(raised.value) : "Unknown"]);
+  items.push(["Valuation", val && !val.isUnknown ? millions(val.value) : "Unknown"]);
   return (
-    <Meta className="mt-6 flex flex-wrap gap-x-5 gap-y-1">
+    <dl className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 border-t border-hairline pt-5 md:grid-cols-5">
       {items.map(([k, v]) => (
-        <span key={k}>
-          <span className="text-slate">{k}</span> <span className="text-ink-black">{v}</span>
-        </span>
+        <div key={k}>
+          <dt className="t-mono-up text-slate">{k}</dt>
+          <dd className={cx("t-body mt-2", v === "Unknown" ? "italic text-slate" : "text-ink-black")}>{v}</dd>
+        </div>
       ))}
-    </Meta>
+    </dl>
   );
 }
 
 /* ------------------------------------------------------------------ */
 
-function Memo({ company, claims, isDiligence, indexOf }: { company: Doc<"companies">; claims: Claim[]; isDiligence: boolean; indexOf: (url: string) => number }) {
-  const by = useMemo(() => new Map(claims.map((c) => [c.field, c])), [claims]);
-  const order = isDiligence ? DILIGENCE_SECTIONS : SCREEN_ORDER;
-  const ordered = order.map((f) => by.get(f)).filter(Boolean) as Claim[];
-
-  return (
-    <article className="mt-12">
-      {!isDiligence && company.screenReasons && (
-        <p className="t-body mb-8 text-ink-black">
-          {company.screenClassification && <span className="font-medium">{CLASS_LABEL[company.screenClassification]}. </span>}
-          {company.screenReasons.join(". ")}.
-        </p>
-      )}
-      {company.diligence?.status === "completed" && (
-        <Meta className="mb-8">Pre-diligence brief, researched for {usd(0.1)}. Numbers in brackets are sources.</Meta>
-      )}
-      <div className="space-y-10">
-        {ordered.map((c) => (
-          <Section key={c._id} claim={c} indexOf={indexOf} />
-        ))}
-      </div>
-    </article>
-  );
-}
-
 function Section({ claim, indexOf }: { claim: Claim; indexOf: (url: string) => number }) {
   const [showReasoning, setShowReasoning] = useState(false);
   const refs = claim.citations.map((c) => indexOf(c.url)).filter((n) => n > 0);
   return (
-    <section>
+    <section id={claim.field} className="scroll-mt-24">
       <h2 className="t-body font-medium text-ink-black">{claim.label}</h2>
-      <div className="mt-2 max-w-[600px]">
+      <div className="mt-2">
         <ClaimValue claim={claim} />
         {refs.length > 0 && (
           <span className="t-mono ml-1 text-schematic-blue">
@@ -229,9 +283,7 @@ function Section({ claim, indexOf }: { claim: Claim; indexOf: (url: string) => n
           <span>no credible evidence</span>
         ) : (
           <>
-            <span className={cx(claim.confidence === "low" && "text-status-amber")}>
-              {claim.confidence ? `${claim.confidence} confidence` : "no confidence given"}
-            </span>
+            <span className={cx(claim.confidence === "low" && "text-status-amber")}>{claim.confidence ? `${claim.confidence} confidence` : "no confidence given"}</span>
             {claim.citationCount === 0 && <span className="text-status-red">unsupported</span>}
             {claim.conflicting && <span className="text-status-amber">sources conflict</span>}
           </>
@@ -242,7 +294,7 @@ function Section({ claim, indexOf }: { claim: Claim; indexOf: (url: string) => n
           </button>
         )}
       </Meta>
-      {showReasoning && <p className="t-small mt-2 max-w-[600px] text-graphite">{claim.reasoning}</p>}
+      {showReasoning && <p className="t-small mt-2 text-graphite">{claim.reasoning}</p>}
     </section>
   );
 }
@@ -310,16 +362,12 @@ function collectSources(claims: Claim[]): Source[] {
   return [...map.values()];
 }
 
-function Sources({ sources, company, claims }: { sources: Source[]; company: Doc<"companies">; claims: Claim[] }) {
+function Sources({ sources, company }: { sources: Source[]; company: Doc<"companies"> }) {
   const verifications = useQuery(api.companies.verificationsFor, { companyId: company._id }) ?? [];
   const verify = useAction(api.pipeline.verifyCitation);
   const [verifying, setVerifying] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   if (sources.length === 0) return null;
-
-  const unsupported = claims.filter((c) => !c.isUnknown && c.citationCount === 0 && c.stage !== "discover").length;
-  const conflicting = claims.filter((c) => c.conflicting).length;
-  const unknown = claims.filter((c) => c.isUnknown && c.stage !== "discover").length;
 
   async function onVerify(s: Source) {
     setVerifying(s.url);
@@ -331,20 +379,15 @@ function Sources({ sources, company, claims }: { sources: Source[]; company: Doc
   }
 
   return (
-    <section className="mt-16 border-t border-hairline pt-8">
+    <section id="sources" className="mt-16 scroll-mt-24 border-t border-hairline pt-8">
       <h2 className="t-title text-ink-black">Sources</h2>
-      <Meta className="mt-1">
-        {sources.length} sources across {claims.length} researched fields
-        {unsupported > 0 && ` · ${unsupported} unsupported`}
-        {conflicting > 0 && ` · ${conflicting} with conflicting evidence`}
-        {unknown > 0 && ` · ${unknown} unknown`}
-      </Meta>
-      <ol className="mt-4 space-y-3">
+      <Meta className="mt-1">Every number in brackets above points here. Verify fetches the page live and checks the passage is still there.</Meta>
+      <ol className="mt-5 space-y-3">
         {sources.map((s, i) => {
           const v = verifications.find((x) => x.url === s.url);
           const isOpen = open === s.url;
           return (
-            <li key={s.url} id={`source-${i + 1}`} className="flex gap-3">
+            <li key={s.url} id={`source-${i + 1}`} className="flex scroll-mt-24 gap-3">
               <span className="t-mono tnum w-7 shrink-0 text-slate">[{i + 1}]</span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-4">
@@ -414,28 +457,33 @@ function Followups({ company }: { company: Doc<"companies"> }) {
   }
 
   return (
-    <section className="mt-16 border-t border-hairline pt-8">
+    <section id="followup" className="mt-16 scroll-mt-24 border-t border-hairline pt-8">
       <h2 className="t-title text-ink-black">Ask a follow-up</h2>
       <Meta className="mt-1">Answered from the live web with sources. About ten seconds and one cent.</Meta>
-      <div className="mt-4 flex gap-2">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void onAsk();
+        }}
+        className="mt-5 flex gap-2"
+      >
         <input
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && onAsk()}
           placeholder="Is this company gaining enterprise adoption?"
           className="t-body h-9 min-w-0 flex-1 rounded-sm border border-hairline bg-pure-white px-3 text-ink-black outline-none focus:border-ink-black"
         />
-        <Button variant="dark" onClick={onAsk} disabled={asking || !question.trim()}>
+        <Button type="submit" variant="dark" disabled={asking || !question.trim()}>
           {asking ? "Researching…" : "Ask"}
         </Button>
-      </div>
+      </form>
       {error && <p className="t-small mt-2 text-status-red">{error}</p>}
       <div className="mt-6 space-y-6">
         {followups.map((f) => (
           <div key={f._id}>
             <p className="t-body font-medium text-ink-black">{f.question}</p>
-            <p className="t-body mt-1 max-w-[600px] text-graphite">{f.answer}</p>
-            <Meta className="mt-1 tnum">
+            <p className="t-body mt-1 text-graphite">{f.answer}</p>
+            <Meta className="tnum mt-1">
               {f.confidence ? `${f.confidence} confidence` : ""} · {f.evidenceStatus} · {(f.latencyMs / 1000).toFixed(1)}s · {usd(f.costUsd)}
               {f.citations.slice(0, 4).map((c) => (
                 <span key={c.url}>
@@ -458,14 +506,14 @@ function Followups({ company }: { company: Doc<"companies"> }) {
 function Discovery({ claims, company, indexOf }: { claims: Claim[]; company: Doc<"companies">; indexOf: (url: string) => number }) {
   if (claims.length === 0) return null;
   return (
-    <details className="mt-16 border-t border-hairline pt-8">
-      <summary className="t-title cursor-pointer list-none text-ink-black">How discovery matched it</summary>
+    <section id="discovery" className="mt-16 scroll-mt-24 border-t border-hairline pt-8">
+      <h2 className="t-title text-ink-black">Discovery match</h2>
       {company.priorityReasons && <Meta className="mt-1">{company.priorityReasons.join(" · ")}</Meta>}
-      <ul className="mt-4 space-y-4">
+      <ul className="mt-5 space-y-4">
         {claims.map((c) => {
           const refs = c.citations.map((x) => indexOf(x.url)).filter((n) => n > 0);
           return (
-            <li key={c._id} className="max-w-[600px]">
+            <li key={c._id}>
               <p className="t-body text-ink-black">
                 <span className="font-medium">{c.field.replace(/_check$/, "").replace(/_/g, " ")}.</span> {c.reasoning || c.valueText}
                 {refs.length > 0 && (
@@ -483,6 +531,6 @@ function Discovery({ claims, company, indexOf }: { claims: Claim[]; company: Doc
           );
         })}
       </ul>
-    </details>
+    </section>
   );
 }
