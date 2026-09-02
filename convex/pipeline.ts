@@ -461,9 +461,19 @@ export const pollDiligence = internalAction({
             state: { ...state, status: "failed", completedAt: Date.now(), error: tr.error?.message ?? tr.status },
           });
           await log(ctx, runId, "diligence", "warn", `${c.name}: diligence ${tr.status}.`);
-        } else if (tr.status === "running" && state.status !== "running") {
-          await ctx.runMutation(internal.companies.setTaskState, { companyId: c._id, kind: "diligence", state: { ...state, status: "running" } });
-          await log(ctx, runId, "diligence", "progress", `${c.name}: researching.`);
+        } else if (tr.status === "running") {
+          const { messages, lastEventAt } = await harvestProgress(client, tr.run_id, state.lastEventAt);
+          for (const m of messages) await log(ctx, runId, "diligence", "progress", `${c.name}: ${m}`);
+          if (state.status !== "running" || lastEventAt !== state.lastEventAt) {
+            await ctx.runMutation(internal.companies.setTaskState, {
+              companyId: c._id,
+              kind: "diligence",
+              state: { ...state, status: "running", lastEventAt: lastEventAt ?? state.lastEventAt },
+            });
+          }
+          if (state.status !== "running" && messages.length === 0) {
+            await log(ctx, runId, "diligence", "progress", `${c.name}: researching.`);
+          }
         }
       }
 
@@ -667,6 +677,45 @@ function conditionLabels(run: Doc<"runs">): Record<string, string> {
 
 function labelFor(c: "high_priority" | "investigate" | "pass"): string {
   return c === "high_priority" ? "High priority" : c === "investigate" ? "Investigate" : "Pass";
+}
+
+
+/**
+ * Read a few seconds of a running task's event stream and return new
+ * progress messages (plans, searches, tool calls) since the last cursor.
+ * Parallel's stream starts from the beginning, so we filter by timestamp.
+ */
+async function harvestProgress(
+  client: Parallel,
+  runId: string,
+  since: string | undefined,
+): Promise<{ messages: string[]; lastEventAt: string | undefined }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4000);
+  const fresh: Array<{ at: string; text: string }> = [];
+  let last = since;
+  try {
+    const stream = await client.taskRun.events(runId, { signal: controller.signal });
+    for await (const ev of stream) {
+      if (!("type" in ev) || typeof ev.type !== "string") continue;
+      if (!ev.type.startsWith("task_run.progress_msg")) continue;
+      const msg = ev as { message?: string; timestamp?: string };
+      if (!msg.message || !msg.timestamp) continue;
+      if (since && msg.timestamp <= since) continue;
+      fresh.push({ at: msg.timestamp, text: msg.message });
+      if (!last || msg.timestamp > last) last = msg.timestamp;
+      if (fresh.length >= 12) break;
+    }
+  } catch {
+    // Aborted after the time budget or stream closed; keep what we have.
+  } finally {
+    clearTimeout(timer);
+  }
+  const messages = fresh
+    .filter((f) => !/^Objective:/.test(f.text))
+    .slice(-3)
+    .map((f) => f.text.replace(/^Query:\s*/, "searching: ").slice(0, 160));
+  return { messages, lastEventAt: last };
 }
 
 /** Drop nothing today, but keep one place to trim claim payloads if needed. */

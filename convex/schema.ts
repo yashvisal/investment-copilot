@@ -61,6 +61,7 @@ export const taskState = v.object({
   completedAt: v.optional(v.number()),
   output: v.optional(v.any()),
   error: v.optional(v.string()),
+  lastEventAt: v.optional(v.string()),
 });
 
 export default defineSchema({
