@@ -7,15 +7,13 @@ export default function Home() {
     <>
       <Nav />
       <Page>
-        <div className="mt-12 max-w-[720px]">
-          <h1 className="font-serif text-heading font-medium leading-[1.11] tracking-[0.012em] text-ink-black">
-            Turn a thesis into the few private companies worth a deeper look.
-          </h1>
-          <p className="mt-4 font-serif text-heading-sm leading-[1.23] text-ink-black">
-            Discover with FindAll, screen with cheap Tasks, spend real compute only on finalists.{" "}
-            <span className="text-schematic-blue">Every claim carries its evidence.</span>
-          </p>
-        </div>
+        <h1 className="mt-16 max-w-[620px] text-heading font-medium leading-[1.11] tracking-[0.012em] text-ink-black">
+          A thesis in. The few companies worth a deeper look out.
+        </h1>
+        <p className="mt-4 max-w-[560px] text-base leading-[1.6] text-graphite">
+          Parallel discovers and researches. Spend rises only as conviction does. Every claim carries its sources, its confidence,
+          and an honest <span className="text-schematic-blue">unknown</span> when the web does not know.
+        </p>
         <div className="mt-16">
           <ThesisComposer />
         </div>

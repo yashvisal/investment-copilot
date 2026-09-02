@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Source_Serif_4 } from "next/font/google";
+import { IBM_Plex_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "./providers";
 
-// Substitutes for Parallel's proprietary gerstnerProgramm / ftSystemMono (DESIGN.md).
-const serif = Source_Serif_4({
-  variable: "--font-serif-var",
+// Stand-ins for Parallel's proprietary Gerstner Programm (grotesque sans) and FT System Mono.
+const sans = Inter({
+  variable: "--font-sans-var",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 });
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${serif.variable} ${mono.variable} h-full`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable} h-full`}>
       <body className="min-h-full flex flex-col">
         <ConvexClientProvider>{children}</ConvexClientProvider>
       </body>

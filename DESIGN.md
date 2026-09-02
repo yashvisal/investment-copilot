@@ -1,3 +1,5 @@
+> **Correction (2026-09-02):** this file was machine-extracted and got two things wrong. parallel.ai's canvas is pure white, not cream, and Gerstner Programm is a grotesque sans, not a serif. The app follows the live site: white canvas, sans for reading, mono for interface text, one blue and one orange accent, 2px radii. Treat the token values below as reference only where they conflict with this note.
+
 # Parallel Web Systems — Style Reference
 > Engineering journal at dawn — a technical reading room where data streams replace photography and the type does the talking.
 

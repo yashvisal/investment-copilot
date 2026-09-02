@@ -401,24 +401,34 @@ export const startDiligence = internalAction({
       await ctx.runMutation(internal.runs.updateStage, { runId, stage: "diligence", stats: { startedAt: Date.now(), count: 0, spendUsd: 0 } });
       await log(ctx, runId, "diligence", "info", `Running ${processor} diligence on ${companyIds.length} finalists.`);
 
-      for (const companyId of companyIds) {
-        const company: Doc<"companies"> | null = await ctx.runQuery(internal.companies.getInternal, { companyId });
-        if (!company) continue;
-        const created = await client.taskRun.create({
-          input: diligenceInput({ name: company.name, url: company.url, description: company.description, thesis: run.thesis }),
-          processor,
-          task_spec: { output_schema: { type: "json", json_schema: DILIGENCE_OUTPUT_SCHEMA } },
-          metadata: { runId, companyId },
-          enable_events: true,
-        });
-        await ctx.runMutation(internal.companies.setTaskState, {
-          companyId,
-          kind: "diligence",
-          state: { taskRunId: created.run_id, status: "queued", processor, startedAt: Date.now() },
-          interactionId: created.interaction_id,
-        });
-        await log(ctx, runId, "diligence", "progress", `${company.name}: diligence task ${created.run_id} queued.`);
-      }
+      // Create every finalist's task concurrently. Parallel runs them in
+      // parallel; we only poll for completion.
+      const finalists = (
+        await Promise.all(companyIds.map((companyId) => ctx.runQuery(internal.companies.getInternal, { companyId })))
+      ).filter((c): c is Doc<"companies"> => c !== null);
+      const created = await Promise.all(
+        finalists.map((company) =>
+          client.taskRun.create({
+            input: diligenceInput({ name: company.name, url: company.url, description: company.description, thesis: run.thesis }),
+            processor,
+            task_spec: { output_schema: { type: "json", json_schema: DILIGENCE_OUTPUT_SCHEMA } },
+            metadata: { runId, companyId: company._id },
+            enable_events: true,
+          }),
+        ),
+      );
+      const startedAt = Date.now();
+      await Promise.all(
+        finalists.map((company, i) =>
+          ctx.runMutation(internal.companies.setTaskState, {
+            companyId: company._id,
+            kind: "diligence",
+            state: { taskRunId: created[i].run_id, status: "queued", processor, startedAt },
+            interactionId: created[i].interaction_id,
+          }),
+        ),
+      );
+      await log(ctx, runId, "diligence", "progress", `${created.length} diligence tasks started concurrently: ${finalists.map((c) => c.name).join(", ")}.`);
       await ctx.scheduler.runAfter(POLL_MS, internal.pipeline.pollDiligence, { runId });
     } catch (err) {
       await fail(ctx, runId, "diligence", err);

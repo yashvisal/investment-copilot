@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 /*
- * Parallel Web Systems design tokens (see DESIGN.md).
- * Fonts: gerstnerProgramm and ftSystemMono are proprietary. DESIGN.md lists
- * Source Serif 4 and IBM Plex Mono as substitutes; they are loaded through
- * next/font in app/layout.tsx and exposed as --font-serif-var / --font-mono-var.
+ * Palette and type roles verified against parallel.ai's shipped CSS
+ * (2026-09-02): white canvas, near-black ink, Gerstner Programm (a grotesque
+ * sans) for reading, FT System Mono for interface text, one blue and one
+ * orange accent. Both typefaces are proprietary; Inter and IBM Plex Mono
+ * stand in through next/font (see app/layout.tsx).
  */
 @theme {
-  /* Colors */
   --color-schematic-blue: #0d6ea5;
   --color-signal-orange: #fb631b;
   --color-ink-black: #181818;
@@ -15,24 +15,22 @@
   --color-slate: #858483;
   --color-ash-gray: #666666;
   --color-hairline: #e5e5e5;
-  --color-cream-paper: #f5f4f1;
+  --color-cream-paper: #ffffff;
   --color-pure-white: #ffffff;
-  --color-fog: #eeeeee;
+  --color-fog: #f4f4f4;
   --color-mortar: #dedede;
   --color-concrete: #cbcbcb;
 
-  /* Semantic status colors. Muted so they read as annotations, not accents. */
   --color-status-green: #2f7d4f;
   --color-status-amber: #b7791f;
   --color-status-red: #b23a2f;
 
-  /* Typography */
-  --font-gerstnerprogramm: var(--font-serif-var), "Source Serif 4", Georgia, "Times New Roman", serif;
-  --font-ftsystemmono: var(--font-mono-var), "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-gerstnerprogramm: var(--font-sans-var), "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-ftsystemmono: var(--font-mono-var), "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --font-sans: var(--font-gerstnerprogramm);
   --font-serif: var(--font-gerstnerprogramm);
   --font-mono: var(--font-ftsystemmono);
 
-  /* Typography scale */
   --text-caption: 10px;
   --text-caption--line-height: 1.5;
   --text-caption--letter-spacing: 0.015em;
@@ -40,56 +38,36 @@
   --text-label--line-height: 1.23;
   --text-label--letter-spacing: 0.015em;
   --text-ui: 12px;
-  --text-ui--line-height: 1.33;
-  --text-ui--letter-spacing: 0.012em;
+  --text-ui--line-height: 1.5;
+  --text-ui--letter-spacing: 0.01em;
   --text-small: 13px;
-  --text-small--line-height: 1.23;
-  --text-small--letter-spacing: 0.01em;
+  --text-small--line-height: 1.5;
   --text-body: 14px;
-  --text-body--line-height: 1.5;
-  --text-body--letter-spacing: 0.01em;
+  --text-body--line-height: 1.6;
   --text-base: 16px;
-  --text-base--line-height: 1.5;
+  --text-base--line-height: 1.6;
   --text-heading-sm: 26px;
   --text-heading-sm--line-height: 1.23;
-  --text-heading-sm--letter-spacing: 0.012em;
+  --text-heading-sm--letter-spacing: -0.01em;
   --text-heading: 36px;
   --text-heading--line-height: 1.11;
-  --text-heading--letter-spacing: 0.012em;
+  --text-heading--letter-spacing: -0.015em;
 
-  /* Spacing */
-  --spacing-8: 8px;
-  --spacing-16: 16px;
-  --spacing-24: 24px;
-  --spacing-48: 48px;
-  --spacing-80: 80px;
-  --spacing-160: 160px;
-
-  /* Border radius. 2px is the signature; 8px only for floating callout pills. */
   --radius-sm: 2px;
   --radius-lg: 8px;
-  --radius-full: 14385.6px;
 
-  /* Shadows */
   --shadow-subtle: rgb(229, 229, 229) 0px 0px 0px 0.5px;
-  --shadow-subtle-2: rgb(229, 229, 229) 0px 0.5px 0px 0px;
   --shadow-sm: rgba(0, 0, 0, 0.02) 0px 13px 8px 0px, rgba(0, 0, 0, 0.03) 0px 6px 6px 0px, rgba(0, 0, 0, 0.04) 0px 1px 3px 0px;
 }
 
-:root {
-  --page-max-width: 1200px;
-  --section-gap: 80px;
-  --card-padding: 24px;
-  --element-gap: 8px;
-}
-
 html {
-  background: var(--color-cream-paper);
+  background: #ffffff;
   color: var(--color-ink-black);
   font-family: var(--font-gerstnerprogramm);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
@@ -98,18 +76,16 @@ body {
 
 ::selection {
   background: var(--color-schematic-blue);
-  color: var(--color-cream-paper);
+  color: #ffffff;
 }
 
-/* UI chrome: mono, uppercase, tracked. Use on nav, buttons, tags, labels. */
+/* Interface text: mono, small, lightly tracked. Never uppercase body copy. */
 @utility chrome {
   font-family: var(--font-ftsystemmono);
-  text-transform: uppercase;
-  letter-spacing: 0.015em;
+  letter-spacing: 0.01em;
   font-weight: 500;
 }
 
-/* Tabular figures for any numeric column. */
 @utility tnum {
   font-variant-numeric: tabular-nums;
 }
