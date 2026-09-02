@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Investment Copilot
 
-## Getting Started
+Turn an investment thesis into the few private companies actually worth a deeper look. Built on [Parallel](https://parallel.ai) FindAll, Task, Responses, Extract, and Monitor, with Convex for run state and Next.js on Vercel.
 
-First, run the development server:
+The product is not an autonomous investor. It compresses the hours an investor spends searching the open web before deciding whether a company deserves real diligence, and it shows its evidence at every step.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## The funnel
+
+```
+Thesis → Discover → Prioritize → Screen → Diligence → Decide
+          FindAll     our code    Task      Task       human
+          core        $0          core      pro
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Spend rises with conviction. Discovery is broad and uses FindAll's `core` generator. Prioritization is deterministic and free, using only FindAll's match-condition outputs and their confidence. The top 12 are screened with a `core` Task Group. At most four finalists get a `pro` diligence task. The strongest processor never runs across the whole set.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Stage | Primitive | Processor | Cap | Unit cost |
+|---|---|---|---|---|
+| Estimate | FindAll ingest | n/a | free | $0 |
+| Discover | FindAll run | `core` | 10, 15, 20, or 25 | $2.00 + $0.15 per match |
+| Prioritize | none | n/a | top 12 | $0 |
+| Screen | Task Group | `core` | 12 | $0.025 per run |
+| Diligence | Task | `pro` | 4 | $0.10 per run |
+| Follow-up question | Responses API | effort `low` | on demand | $0.01 per request |
+| Verify citation | Extract | n/a | on demand | $0.001 per URL |
+| Watch company | Monitor `snapshot` | `lite` | flag-gated | $0.003 per execution |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+A 10-company run is about $4.15. The thesis page shows this estimate before anything is spent.
 
-## Learn More
+## Research basis as a first-class record
 
-To learn more about Next.js, take a look at the following resources:
+Every researched field becomes a `claim` row: value, reasoning, confidence, citations with excerpts, and derived flags for `supported`, `conflicting`, and `isUnknown`. The company page reads from claims, not from nested task output. That is what powers the evidence strip, the unsupported-claim list, conflict flags, the "Unknown: insufficient credible evidence" rendering, and later the eval suite.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Classification is deterministic. The screening task returns nullable facts; a rules function in `lib/parallel/classify.ts` maps facts and confidence to Pass, Investigate, or High priority with human-readable reasons. The model never votes on the verdict, so screening agreement in evals measures a policy you can tune.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Cost controls
 
-## Deploy on Vercel
+- Match limit is a fixed choice: 10, 15, 20, or 25.
+- Screening and diligence caps are enforced server-side.
+- A project research budget lives in Convex. Each run's actual spend is added to it. If the estimate for a new run exceeds what remains, the run is refused and the UI explains how to request more.
+- Monitoring is implemented behind `ENABLE_MONITORS`. The public demo shows the "disabled to avoid ongoing API costs" message; production flips the flag.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Architecture
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `convex/` holds the schema and the pipeline. Stages are Convex Node actions chained by the scheduler and polled every eight seconds, so no request ever waits on Parallel and the pipeline survives Vercel's function timeout.
+- `lib/parallel/` is pure TypeScript: task specs, the cost model, basis normalization, prioritization, and classification. Shared by Convex actions, the UI, and scripts.
+- `app/` is the Next.js App Router UI. Three views: thesis, run, company. The run page subscribes to Convex, so candidates appear as FindAll matches them and screens fill in as tasks complete.
+
+## Running locally
+
+```bash
+pnpm install
+cp .env.example .env.local   # add PARALLEL_API_KEY
+npx convex dev               # creates a dev deployment, writes NEXT_PUBLIC_CONVEX_URL
+npx convex env set PARALLEL_API_KEY <key>
+npx convex env set ENABLE_MONITORS false
+npx convex env set ENABLE_LIVE_RUNS true
+pnpm dev
+```
+
+## Design
+
+Styled after Parallel's own system: cream canvas, serif for reading, monospace for interface chrome, hairline borders, 2px radii. See `DESIGN.md`. Parallel's typefaces are proprietary, so Source Serif 4 and IBM Plex Mono stand in.
