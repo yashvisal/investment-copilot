@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { hostname, millions, usd } from "@/lib/format";
@@ -19,7 +19,15 @@ export function CompanyView({ runId, companyId }: { runId: Id<"runs">; companyId
   const run = useQuery(api.runs.get, { runId });
   const company = useQuery(api.companies.get, { companyId });
   const claims = useQuery(api.companies.claimsFor, { companyId });
-  const [tab, setTab] = useState<TabKey>("thesis");
+  const [tab, setTabState] = useState<TabKey>("thesis");
+  useEffect(() => {
+    const h = window.location.hash.replace("#", "");
+    if (h === "diligence" || h === "evidence") setTabState(h);
+  }, []);
+  const setTab = (t: TabKey) => {
+    setTabState(t);
+    if (typeof window !== "undefined") window.history.replaceState(null, "", `#${t}`);
+  };
 
   if (company === undefined || run === undefined) {
     return (

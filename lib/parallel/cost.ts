@@ -31,7 +31,7 @@ export type TaskProcessor = keyof typeof PRICING.task;
 export const STAGE_CONFIG = {
   discover: { generator: "core" as FindAllGenerator, expectedMinutes: [3, 8] as const },
   screen: { processor: "core" as TaskProcessor, expectedMinutes: [1, 4] as const },
-  diligence: { processor: "pro" as TaskProcessor, expectedMinutes: [3, 8] as const },
+  diligence: { processor: "pro" as TaskProcessor, expectedMinutes: [5, 15] as const },
 } as const;
 
 export const MATCH_LIMIT_OPTIONS = [10, 15, 20, 25] as const;

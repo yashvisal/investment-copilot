@@ -274,6 +274,16 @@ function StageCell({ c }: { c: Doc<"companies"> }) {
 }
 
 function WhyCell({ c }: { c: Doc<"companies"> }) {
+  const dil = c.diligence?.output as Record<string, unknown> | undefined;
+  const bull = typeof dil?.bull_case === "string" ? (dil.bull_case as string) : null;
+  if (bull) {
+    return (
+      <div>
+        <p className="line-clamp-2 text-ink-black">{bull}</p>
+        {c.screenReasons?.[0] && <p className="mt-1 text-small text-slate">{c.screenReasons[0]}</p>}
+      </div>
+    );
+  }
   const out = c.screen?.output as Record<string, unknown> | undefined;
   const sells = typeof out?.what_it_sells === "string" ? (out.what_it_sells as string) : null;
   const reason = c.screenReasons?.[0];
