@@ -1,26 +1,181 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Palette and type roles verified against parallel.ai's shipped CSS
+ * (2026-09-02): white canvas, near-black ink, Gerstner Programm (a grotesque
+ * sans) for reading, FT System Mono for interface text, one blue and one
+ * orange accent. Both typefaces are proprietary; Inter and IBM Plex Mono
+ * stand in through next/font (see app/layout.tsx).
+ */
+@theme {
+  --color-schematic-blue: #0d6ea5;
+  --color-signal-orange: #fb631b;
+  --color-ink-black: #181818;
+  --color-graphite: #434343;
+  --color-slate: #858483;
+  --color-ash-gray: #666666;
+  --color-hairline: #e5e5e5;
+  --color-cream-paper: #ffffff;
+  --color-pure-white: #ffffff;
+  --color-fog: #f4f4f4;
+  --color-mortar: #dedede;
+  --color-concrete: #cbcbcb;
+
+  --color-status-green: #2f7d4f;
+  --color-status-amber: #b7791f;
+  --color-status-red: #b23a2f;
+
+  --font-gerstnerprogramm: var(--font-sans-var), "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-ftsystemmono: var(--font-mono-var), "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --font-sans: var(--font-gerstnerprogramm);
+  --font-serif: var(--font-gerstnerprogramm);
+  --font-mono: var(--font-ftsystemmono);
+
+  --text-caption: 10px;
+  --text-caption--line-height: 1.5;
+  --text-caption--letter-spacing: 0.015em;
+  --text-label: 11px;
+  --text-label--line-height: 1.23;
+  --text-label--letter-spacing: 0.015em;
+  --text-ui: 12px;
+  --text-ui--line-height: 1.5;
+  --text-ui--letter-spacing: 0.01em;
+  --text-small: 13px;
+  --text-small--line-height: 1.5;
+  --text-body: 14px;
+  --text-body--line-height: 1.6;
+  --text-base: 16px;
+  --text-base--line-height: 1.6;
+  --text-heading-sm: 26px;
+  --text-heading-sm--line-height: 1.23;
+  --text-heading-sm--letter-spacing: -0.01em;
+  --text-heading: 36px;
+  --text-heading--line-height: 1.11;
+  --text-heading--letter-spacing: -0.015em;
+
+  --radius-sm: 2px;
+  --radius-lg: 8px;
+
+  --shadow-subtle: rgb(229, 229, 229) 0px 0px 0px 0.5px;
+  --shadow-sm: rgba(0, 0, 0, 0.02) 0px 13px 8px 0px, rgba(0, 0, 0, 0.03) 0px 6px 6px 0px, rgba(0, 0, 0, 0.04) 0px 1px 3px 0px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: #ffffff;
+  color: var(--color-ink-black);
+  font-family: var(--font-gerstnerprogramm);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+}
+
+::selection {
+  background: var(--color-schematic-blue);
+  color: #ffffff;
+}
+
+/* Interface text: mono, small, lightly tracked. Never uppercase body copy. */
+@utility chrome {
+  font-family: var(--font-ftsystemmono);
+  letter-spacing: 0.01em;
+  font-weight: 500;
+}
+
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* One type scale. Every text element uses exactly one of these. */
+@utility t-display {
+  font-size: 40px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 500;
+}
+@utility t-title {
+  font-size: 24px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  font-weight: 500;
+}
+@utility t-lead {
+  font-size: 17px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+@utility t-body {
+  font-size: 15px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+@utility t-small {
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+@utility t-mono {
+  font-family: var(--font-ftsystemmono);
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  font-weight: 400;
+}
+@utility t-mono-up {
+  font-family: var(--font-ftsystemmono);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+:focus-visible:not(textarea, input) {
+  outline: 2px solid var(--color-ink-black);
+  outline-offset: 2px;
+}
+textarea:focus, input:focus {
+  outline: none;
+}
+
+html {
+  overscroll-behavior: none;
+}
+/* One orange segment, half the perimeter long, orbiting the box from the top-left corner. */
+.trace-frame {
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  overflow: visible;
+}
+.trace-frame .trace {
+  x: 1px;
+  y: 1px;
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  rx: 2px;
+  fill: none;
+  stroke: var(--color-signal-orange);
+  stroke-width: 2px;
+  stroke-dasharray: 22 78;
+  stroke-dashoffset: 0;
+  animation: trace-orbit 1.8s linear infinite;
+}
+@keyframes trace-orbit {
+  to { stroke-dashoffset: -100; }
+}
+
+textarea.autogrow {
+  overflow: hidden;
+  resize: none;
+  field-sizing: content;
 }
