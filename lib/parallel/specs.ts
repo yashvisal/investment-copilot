@@ -170,10 +170,10 @@ export const DILIGENCE_OUTPUT_SCHEMA = {
       },
     },
     bull_case: nullableString(
-      "The strongest evidence-backed argument for why this company could become a category leader. Three to four sentences. Only cite things supported by sources.",
+      "The strongest evidence-backed argument for why this company could become a category leader. Write a standalone paragraph of three to four sentences that opens with the company name and what it does, then the argument. It is not an answer to a question: never begin with Yes, No, or a verdict. Only cite things supported by sources.",
     ),
     bear_case: nullableString(
-      "The strongest evidence-backed risks: competition from hyperscalers or open source, commoditization, concentration, execution, capital intensity. Three to four sentences.",
+      "The strongest evidence-backed risks: competition from hyperscalers or open source, commoditization, concentration, execution, capital intensity. A standalone paragraph of three to four sentences opening with the company name. Never begin with Yes, No, or a verdict.",
     ),
     unresolved_questions: stringArray(
       "Three to six specific questions a human should answer in diligence because the public web cannot, e.g. actual ARR, gross margin, churn, contract structure.",

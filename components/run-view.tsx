@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { elapsed, hostname, millions, timeOfDay, usd } from "@/lib/format";
-import { BUCKET_LABEL, bucketOf, firstSentences, orderCompanies, type Bucket } from "@/lib/order";
+import { BUCKET_LABEL, bucketOf, firstSentences, orderCompanies, stripVerdictLead, type Bucket } from "@/lib/order";
 import { Button, CLASS_LABEL, DecisionControl, Empty, Eyebrow, Meta, Page, Skeleton, SkeletonCard, Spinner, Wire, cx, type WireNode } from "./ui";
 import { Nav } from "./nav";
 
@@ -233,13 +233,12 @@ function statusWord(c: Doc<"companies">): string {
   return "Matched at discovery";
 }
 
+/** Row copy: a plain overview of what the company does. Passes show why they were passed. */
 function why(c: Doc<"companies">): string {
-  const dil = c.diligence?.output as Record<string, unknown> | undefined;
-  if (typeof dil?.bull_case === "string") return firstSentences(dil.bull_case as string, 2);
   const out = c.screen?.output as Record<string, unknown> | undefined;
   if (c.screenClassification === "pass" && c.screenReasons?.[0]) return c.screenReasons[0];
-  if (typeof out?.what_it_sells === "string") return firstSentences(out.what_it_sells as string, 2);
-  if (c.description) return firstSentences(c.description, 2);
+  if (typeof out?.what_it_sells === "string") return firstSentences(stripVerdictLead(out.what_it_sells as string), 2);
+  if (c.description) return firstSentences(stripVerdictLead(c.description), 2);
   return "";
 }
 

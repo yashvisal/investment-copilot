@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { hostname, millions, usd } from "@/lib/format";
-import { orderCompanies } from "@/lib/order";
+import { orderCompanies, stripVerdictLead } from "@/lib/order";
 import { DILIGENCE_SECTIONS } from "@/lib/parallel/specs";
 import { Nav } from "./nav";
 import { Button, ButtonLink, CLASS_LABEL, DecisionControl, Empty, Eyebrow, Meta, Page, Skeleton, Spinner, cx } from "./ui";
@@ -299,7 +299,10 @@ function Section({ claim, indexOf }: { claim: Claim; indexOf: (url: string) => n
 function ClaimValue({ claim }: { claim: Claim }) {
   if (claim.isUnknown) return <p className="t-body italic text-slate">Unknown: insufficient credible evidence.</p>;
   const v = claim.value;
-  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+  if (typeof v === "string") {
+    return <span className="t-body text-ink-black">{stripVerdictLead(v)}</span>;
+  }
+  if (typeof v === "number" || typeof v === "boolean") {
     return <span className="t-body text-ink-black">{String(v)}</span>;
   }
   if (Array.isArray(v)) {

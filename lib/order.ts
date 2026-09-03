@@ -39,3 +39,8 @@ export function firstSentences(text: string, n: number): string {
   if (!parts) return text;
   return parts.slice(0, n).join("").trim();
 }
+
+/** Drops a leading "Yes —", "No,", or similar verdict so prose reads as a statement, not a reply. */
+export function stripVerdictLead(text: string): string {
+  return text.replace(/^\s*(yes|no|absolutely|definitely|likely|probably)\b[\s,:;.!—–-]*/i, (m, w) => (m.length < text.length ? "" : w)).replace(/^\p{Ll}/u, (ch) => ch.toUpperCase());
+}
