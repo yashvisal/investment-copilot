@@ -151,6 +151,16 @@ textarea:focus, input:focus {
 html {
   overscroll-behavior: none;
 }
+/* A dash that runs clockwise around a box, starting top-left. Used while a suggestion streams in. */
+@keyframes trace {
+  to { stroke-dashoffset: -100; }
+}
+.trace {
+  stroke-dasharray: 34 66;
+  stroke-dashoffset: 0;
+  animation: trace 1.1s linear infinite;
+}
+
 textarea.autogrow {
   overflow: hidden;
   resize: none;

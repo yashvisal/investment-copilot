@@ -9,7 +9,7 @@ import { usd } from "@/lib/format";
 import { DEFAULT_DILIGENCE_LIMIT, DEFAULT_SCREEN_LIMIT, MATCH_LIMIT_OPTIONS, estimateRun, type MatchLimit } from "@/lib/parallel/cost";
 import { DEFAULT_OBJECTIVE_HINT, DEFAULT_THESIS } from "@/lib/parallel/specs";
 import type { MatchCondition } from "@/lib/parallel/types";
-import { AutoTextarea, Button, Eyebrow, Meta, Spinner, Wire, cx } from "./ui";
+import { AutoTextarea, Button, Eyebrow, Meta, Wire, cx } from "./ui";
 
 /** Diagonal magic wand with sparks. */
 function Wand() {
@@ -150,17 +150,42 @@ export function ThesisComposer({ preloadedCanonical }: { preloadedCanonical: Pre
           placeholder="Describe the companies you want to find"
           className="t-lead min-h-[36px] flex-1 bg-transparent px-2 py-1 text-ink-black outline-none placeholder:text-concrete"
         />
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => void suggestOne()}
-          disabled={suggesting || deriving}
-          aria-label="Suggest a thesis"
-          title="Suggest a thesis"
-          className="w-9 shrink-0 px-0!"
-        >
-          {suggesting ? <Spinner /> : <Wand />}
-        </Button>
+        <span className="relative shrink-0">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => void suggestOne()}
+            disabled={suggesting || deriving}
+            aria-label="Suggest a thesis"
+            aria-busy={suggesting}
+            title="Suggest a thesis"
+            className="w-9 px-0! disabled:opacity-100"
+          >
+            <Wand />
+          </Button>
+          {suggesting && (
+            <svg
+              className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <rect
+                x="0"
+                y="0"
+                width="100"
+                height="100"
+                rx="2"
+                pathLength={100}
+                fill="none"
+                stroke="var(--color-signal-orange)"
+                strokeWidth="2"
+                vectorEffect="non-scaling-stroke"
+                className="trace"
+              />
+            </svg>
+          )}
+        </span>
         <Button type="submit" variant="dark" disabled={deriving || !thesis.trim()} className="w-24 shrink-0 disabled:opacity-100">
           {deriving ? "Planning" : "Plan"}
         </Button>
