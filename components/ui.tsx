@@ -66,6 +66,28 @@ const DECISION_FILL: Record<Decision, string> = {
   deep_diligence: "bg-signal-orange text-pure-white",
 };
 
+/* ------------------------------------------------------------------ */
+/* Skeletons: quiet grey bars in the shape of what is coming.           */
+/* ------------------------------------------------------------------ */
+
+export function Skeleton({ className }: { className?: string }) {
+  return <div aria-hidden="true" className={cx("animate-pulse rounded-sm bg-fog", className)} />;
+}
+
+/** A card-shaped placeholder matching a company row or a run card. */
+export function SkeletonCard({ lines = 2 }: { lines?: number }) {
+  return (
+    <div className="rounded-sm border border-hairline bg-pure-white p-5">
+      <Skeleton className="h-4 w-48" />
+      <div className="mt-3 space-y-2">
+        {Array.from({ length: lines }, (_, i) => (
+          <Skeleton key={i} className={cx("h-3", i === lines - 1 ? "w-2/3" : "w-full")} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function Spinner() {
   return <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-signal-orange align-middle" />;
 }

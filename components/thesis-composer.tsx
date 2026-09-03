@@ -11,13 +11,13 @@ import { DEFAULT_OBJECTIVE_HINT, DEFAULT_THESIS } from "@/lib/parallel/specs";
 import type { MatchCondition } from "@/lib/parallel/types";
 import { AutoTextarea, Button, Eyebrow, Meta, Spinner, Wire, cx } from "./ui";
 
+/** Four-point spark, filled so it reads at 16px. */
 function Wand() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-      <path d="M2.5 13.5 10 6" />
-      <path d="M9 4.5 11.5 2" />
-      <path d="M12.5 8 14 6.5" />
-      <path d="M11 11.5 13 13.5" />
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" className="block shrink-0">
+      <path d="M8 1.5c.4 2.9 1.6 4.1 4.5 4.5-2.9.4-4.1 1.6-4.5 4.5C7.6 7.6 6.4 6.4 3.5 6 6.4 5.6 7.6 4.4 8 1.5z" />
+      <path d="M3.5 9.5c.2 1.4.8 2 2.2 2.2-1.4.2-2 .8-2.2 2.2-.2-1.4-.8-2-2.2-2.2 1.4-.2 2-.8 2.2-2.2z" />
+      <path d="M12.5 10c.2 1.2.7 1.7 1.9 1.9-1.2.2-1.7.7-1.9 1.9-.2-1.2-.7-1.7-1.9-1.9 1.2-.2 1.7-.7 1.9-1.9z" />
     </svg>
   );
 }
@@ -27,7 +27,6 @@ type Block = { reason: "budget" | "disabled" | "busy"; message: string; contact:
 export function ThesisComposer() {
   const router = useRouter();
   const ingest = useAction(api.pipeline.ingestThesis);
-  const suggest = useAction(api.pipeline.suggestThesis);
   const start = useMutation(api.runs.start);
   const canonical = useQuery(api.runs.canonical);
 
@@ -72,8 +71,24 @@ export function ThesisComposer() {
     setSuggesting(true);
     setError(null);
     try {
-      const next = await suggest({ avoid: thesis.trim() || DEFAULT_THESIS });
-      setThesis(next);
+      const res = await fetch("/api/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avoid: thesis.trim() || DEFAULT_THESIS }),
+      });
+      if (!res.ok || !res.body) throw new Error(await res.text());
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let text = "";
+      setThesis("");
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        text += decoder.decode(value, { stream: true });
+        const errAt = text.indexOf("\n[error]");
+        if (errAt >= 0) throw new Error(text.slice(errAt + 9).trim());
+        setThesis(text.replace(/^["']|["']$/g, ""));
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -126,7 +141,7 @@ export function ThesisComposer() {
           disabled={suggesting || deriving}
           aria-label="Suggest a thesis"
           title="Suggest a thesis"
-          className="w-9 shrink-0 px-0"
+          className="w-9 shrink-0 px-0!"
         >
           {suggesting ? <Spinner /> : <Wand />}
         </Button>

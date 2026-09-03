@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Nav } from "@/components/nav";
-import { Empty, Meta, Page, Spinner, cx } from "@/components/ui";
+import { Empty, Meta, Page, SkeletonCard, Spinner, cx } from "@/components/ui";
 import { dateShort } from "@/lib/format";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -27,7 +27,13 @@ export default function RunsPage() {
         <p className="t-lead mt-5 max-w-[620px] text-graphite">Every thesis run so far. Open one to see what it found.</p>
 
         <div className="mt-10">
-          {runs === undefined && <Empty>Loading…</Empty>}
+          {runs === undefined && (
+            <div className="space-y-3">
+              <SkeletonCard lines={1} />
+              <SkeletonCard lines={1} />
+              <SkeletonCard lines={1} />
+            </div>
+          )}
           {runs && runs.length === 0 && <Empty>No runs yet. Start one from the home page.</Empty>}
           <ol className="space-y-3">
             {runs?.map((r) => {

@@ -8,7 +8,7 @@ import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { elapsed, hostname, millions, timeOfDay, usd } from "@/lib/format";
 import { BUCKET_LABEL, bucketOf, firstSentences, orderCompanies, type Bucket } from "@/lib/order";
-import { CLASS_LABEL, DecisionControl, Empty, Eyebrow, Meta, Page, Spinner, Wire, cx, type WireNode } from "./ui";
+import { CLASS_LABEL, DecisionControl, Empty, Eyebrow, Meta, Page, Skeleton, SkeletonCard, Spinner, Wire, cx, type WireNode } from "./ui";
 import { Nav } from "./nav";
 
 type StageKey = "discover" | "prioritize" | "screen" | "diligence";
@@ -26,7 +26,7 @@ function useNow(active: boolean) {
   return now;
 }
 
-export function RunView({ runId, boxed = false }: { runId: Id<"runs">; boxed?: boolean }) {
+export function RunView({ runId }: { runId: Id<"runs"> }) {
   const run = useQuery(api.runs.get, { runId });
   const companies = useQuery(api.companies.forRun, { runId });
   const events = useQuery(api.events.forRun, { runId });
@@ -35,7 +35,7 @@ export function RunView({ runId, boxed = false }: { runId: Id<"runs">; boxed?: b
   const ordered = useMemo(() => orderCompanies(companies ?? []), [companies]);
   const unmatched = (companies ?? []).filter((c) => c.matchStatus !== "matched");
 
-  if (run === undefined) return <Shell>Loading…</Shell>;
+  if (run === undefined) return <RunSkeleton />;
   if (run === null) return <Shell>Run not found.</Shell>;
 
   const groups = BUCKETS.map((b) => ({ bucket: b, rows: ordered.filter((c) => bucketOf(c) === b) })).filter((g) => g.rows.length > 0);
@@ -61,9 +61,9 @@ export function RunView({ runId, boxed = false }: { runId: Id<"runs">; boxed?: b
                   <h2 className="t-body font-medium text-ink-black">{BUCKET_LABEL[g.bucket]}</h2>
                   <Meta className="tnum">{g.rows.length}</Meta>
                 </div>
-                <ol className={boxed ? "mt-4 space-y-3" : "mt-3 divide-y divide-hairline border-y border-hairline"}>
+                <ol className="mt-4 space-y-3">
                   {g.rows.map((c) => (
-                    <Row key={c._id} runId={run._id} c={c} boxed={boxed} />
+                    <Row key={c._id} runId={run._id} c={c} />
                   ))}
                 </ol>
               </section>
@@ -94,6 +94,33 @@ export function RunView({ runId, boxed = false }: { runId: Id<"runs">; boxed?: b
   );
 }
 
+function RunSkeleton() {
+  return (
+    <>
+      <Nav />
+      <Page>
+        <Skeleton className="h-3 w-16" />
+        <div className="mt-4 max-w-[760px] space-y-3">
+          <Skeleton className="h-7 w-full" />
+          <Skeleton className="h-7 w-3/4" />
+        </div>
+        <div className="mt-12 flex max-w-[760px] gap-6">
+          {Array.from({ length: 5 }, (_, i) => (
+            <Skeleton key={i} className="h-3 flex-1" />
+          ))}
+        </div>
+        <Skeleton className="mt-8 h-4 w-96" />
+        <Skeleton className="mt-16 h-4 w-24" />
+        <div className="mt-4 space-y-3">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </Page>
+    </>
+  );
+}
+
 function Shell({ children }: { children: string }) {
   return (
     <>
@@ -107,7 +134,7 @@ function Shell({ children }: { children: string }) {
 
 /* ------------------------------------------------------------------ */
 
-function Row({ runId, c, boxed }: { runId: Id<"runs">; c: Doc<"companies">; boxed: boolean }) {
+function Row({ runId, c }: { runId: Id<"runs">; c: Doc<"companies"> }) {
   const router = useRouter();
   const out = (c.screen?.output ?? {}) as Record<string, unknown>;
   const facts = [
@@ -120,10 +147,7 @@ function Row({ runId, c, boxed }: { runId: Id<"runs">; c: Doc<"companies">; boxe
   return (
     <li
       onClick={() => router.push(href)}
-      className={cx(
-        "group grid cursor-pointer grid-cols-1 gap-x-8 gap-y-3 md:grid-cols-[240px_1fr_auto] md:items-start",
-        boxed ? "rounded-sm border border-hairline bg-pure-white p-5 shadow-sm transition-colors hover:border-ink-black" : "py-4",
-      )}
+      className="group grid cursor-pointer grid-cols-1 gap-x-8 gap-y-3 rounded-sm border border-hairline bg-pure-white p-5 shadow-sm transition-colors hover:border-ink-black md:grid-cols-[240px_1fr_auto] md:items-start"
     >
       <div className="min-w-0">
         <Link href={href} className="t-body block font-medium text-ink-black group-hover:text-schematic-blue">

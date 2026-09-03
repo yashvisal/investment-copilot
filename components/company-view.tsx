@@ -8,7 +8,7 @@ import { hostname, millions, usd } from "@/lib/format";
 import { orderCompanies } from "@/lib/order";
 import { DILIGENCE_SECTIONS } from "@/lib/parallel/specs";
 import { Nav } from "./nav";
-import { Button, ButtonLink, CLASS_LABEL, DecisionControl, Empty, Eyebrow, Meta, Page, Spinner, cx } from "./ui";
+import { Button, ButtonLink, CLASS_LABEL, DecisionControl, Empty, Eyebrow, Meta, Page, Skeleton, Spinner, cx } from "./ui";
 
 type Claim = Doc<"claims">;
 
@@ -36,7 +36,7 @@ export function CompanyView({ runId, companyId }: { runId: Id<"runs">; companyId
   const prev = idx > 0 ? ordered[idx - 1] : null;
   const next = idx >= 0 && idx < ordered.length - 1 ? ordered[idx + 1] : null;
 
-  if (company === undefined || run === undefined) return <Shell>Loading…</Shell>;
+  if (company === undefined || run === undefined) return <CompanySkeleton />;
   if (!company || !run) return <Shell>Company not found.</Shell>;
 
   const all = claims ?? [];
@@ -463,5 +463,52 @@ function Discovery({ claims, company, indexOf }: { claims: Claim[]; company: Doc
         })}
       </ul>
     </section>
+  );
+}
+
+function CompanySkeleton() {
+  return (
+    <>
+      <Nav />
+      <Page>
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-9 w-32" />
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-28" />
+            <Skeleton className="h-9 w-28" />
+          </div>
+        </div>
+        <Skeleton className="mt-10 h-10 w-80" />
+        <Skeleton className="mt-3 h-4 w-40" />
+        <div className="mt-8 grid grid-cols-5 gap-6 border-y border-hairline py-5">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i}>
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="mt-2 h-4 w-24" />
+            </div>
+          ))}
+        </div>
+        <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-[220px_1fr]">
+          <div className="space-y-3">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="mt-6 h-3 w-16" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+          <div className="space-y-8">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i}>
+                <Skeleton className="h-5 w-40" />
+                <div className="mt-3 space-y-2">
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-3/4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Page>
+    </>
   );
 }
