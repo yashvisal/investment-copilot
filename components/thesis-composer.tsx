@@ -9,13 +9,25 @@ import { usd } from "@/lib/format";
 import { DEFAULT_DILIGENCE_LIMIT, DEFAULT_SCREEN_LIMIT, MATCH_LIMIT_OPTIONS, estimateRun, type MatchLimit } from "@/lib/parallel/cost";
 import { DEFAULT_OBJECTIVE_HINT, DEFAULT_THESIS } from "@/lib/parallel/specs";
 import type { MatchCondition } from "@/lib/parallel/types";
-import { AutoTextarea, Button, Eyebrow, Meta, Wire, cx } from "./ui";
+import { AutoTextarea, Button, Eyebrow, Meta, Spinner, Wire, cx } from "./ui";
+
+function Wand() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M2.5 13.5 10 6" />
+      <path d="M9 4.5 11.5 2" />
+      <path d="M12.5 8 14 6.5" />
+      <path d="M11 11.5 13 13.5" />
+    </svg>
+  );
+}
 
 type Block = { reason: "budget" | "disabled" | "busy"; message: string; contact: string };
 
 export function ThesisComposer() {
   const router = useRouter();
   const ingest = useAction(api.pipeline.ingestThesis);
+  const suggest = useAction(api.pipeline.suggestThesis);
   const start = useMutation(api.runs.start);
   const canonical = useQuery(api.runs.canonical);
 
@@ -25,6 +37,7 @@ export function ThesisComposer() {
   const [conditions, setConditions] = useState<MatchCondition[] | null>(null);
   const [entityType, setEntityType] = useState("companies");
   const [deriving, setDeriving] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [block, setBlock] = useState<Block | null>(null);
@@ -51,6 +64,20 @@ export function ThesisComposer() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setDeriving(false);
+    }
+  }
+
+  async function suggestOne() {
+    if (suggesting) return;
+    setSuggesting(true);
+    setError(null);
+    try {
+      const next = await suggest({ avoid: thesis.trim() || DEFAULT_THESIS });
+      setThesis(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSuggesting(false);
     }
   }
 
@@ -92,18 +119,22 @@ export function ThesisComposer() {
           placeholder="Describe the companies you want to find"
           className="t-lead min-h-[36px] flex-1 bg-transparent px-2 py-1 text-ink-black outline-none placeholder:text-concrete"
         />
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => void suggestOne()}
+          disabled={suggesting || deriving}
+          aria-label="Suggest a thesis"
+          title="Suggest a thesis"
+          className="w-9 shrink-0 px-0"
+        >
+          {suggesting ? <Spinner /> : <Wand />}
+        </Button>
         <Button type="submit" variant="dark" disabled={deriving || !thesis.trim()} className="w-24 shrink-0 disabled:opacity-100">
           {deriving ? "Planning" : "Plan"}
         </Button>
       </form>
-      <Meta className="mt-2 flex flex-wrap gap-x-3">
-        <span>Free to plan. Nothing is spent until you run.</span>
-        {!thesis.trim() && (
-          <button type="button" className="text-ink-black hover:text-schematic-blue" onClick={() => setThesis(DEFAULT_THESIS)}>
-            Try an example
-          </button>
-        )}
-      </Meta>
+      <Meta className="mt-2">Free to plan. Nothing is spent until you run.</Meta>
       {error && <p className="t-small mt-3 text-status-red">{error}</p>}
 
       {conditions && planned && (

@@ -740,3 +740,33 @@ function stripClaims(claims: Claim[]): Claim[] {
     reasoning: c.reasoning.slice(0, 4000),
   }));
 }
+
+/* ------------------------------------------------------------------ */
+/* Suggest a fresh thesis (OpenAI, not a research call)                */
+/* ------------------------------------------------------------------ */
+
+const SUGGEST_MODEL = process.env.OPENAI_MODEL ?? "gpt-5.6-luna";
+
+export const suggestThesis = action({
+  args: { avoid: v.optional(v.string()) },
+  returns: v.string(),
+  handler: async (_ctx, args): Promise<string> => {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error("OPENAI_API_KEY is not set in the Convex deployment");
+    const openai = new OpenAI({ apiKey });
+    const res = await openai.responses.create({
+      model: SUGGEST_MODEL,
+      instructions: [
+        "You write one-sentence venture investment theses for a sourcing tool that finds early-stage companies on the open web.",
+        "Return exactly one sentence, 20 to 35 words, no quotes, no preamble.",
+        "It must name a concrete sector, an evidence requirement (traction, customers, hiring, product signals), and one stage or financing constraint.",
+        "Pick a sector at random from across the whole economy: climate, biotech, fintech, defense, logistics, construction, education, robotics, consumer, health, energy, agriculture, space, developer tools, legal, insurance.",
+        "Example of the register: Find promising early-stage AI infrastructure companies with credible evidence of enterprise adoption and recent momentum, and no massive late-stage financing yet.",
+      ].join(" "),
+      input: args.avoid ? `Write a different thesis. Do not reuse this sector or wording: ${args.avoid}` : "Write a thesis.",
+    });
+    const text = res.output_text.trim().replace(/^["']|["']$/g, "");
+    if (!text) throw new Error("No thesis came back");
+    return text;
+  },
+});

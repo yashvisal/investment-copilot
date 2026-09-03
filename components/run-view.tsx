@@ -26,7 +26,7 @@ function useNow(active: boolean) {
   return now;
 }
 
-export function RunView({ runId }: { runId: Id<"runs"> }) {
+export function RunView({ runId, boxed = false }: { runId: Id<"runs">; boxed?: boolean }) {
   const run = useQuery(api.runs.get, { runId });
   const companies = useQuery(api.companies.forRun, { runId });
   const events = useQuery(api.events.forRun, { runId });
@@ -61,9 +61,9 @@ export function RunView({ runId }: { runId: Id<"runs"> }) {
                   <h2 className="t-body font-medium text-ink-black">{BUCKET_LABEL[g.bucket]}</h2>
                   <Meta className="tnum">{g.rows.length}</Meta>
                 </div>
-                <ol className="mt-3 divide-y divide-hairline border-y border-hairline">
+                <ol className={boxed ? "mt-4 space-y-3" : "mt-3 divide-y divide-hairline border-y border-hairline"}>
                   {g.rows.map((c) => (
-                    <Row key={c._id} runId={run._id} c={c} />
+                    <Row key={c._id} runId={run._id} c={c} boxed={boxed} />
                   ))}
                 </ol>
               </section>
@@ -107,7 +107,7 @@ function Shell({ children }: { children: string }) {
 
 /* ------------------------------------------------------------------ */
 
-function Row({ runId, c }: { runId: Id<"runs">; c: Doc<"companies"> }) {
+function Row({ runId, c, boxed }: { runId: Id<"runs">; c: Doc<"companies">; boxed: boolean }) {
   const router = useRouter();
   const out = (c.screen?.output ?? {}) as Record<string, unknown>;
   const facts = [
@@ -120,7 +120,10 @@ function Row({ runId, c }: { runId: Id<"runs">; c: Doc<"companies"> }) {
   return (
     <li
       onClick={() => router.push(href)}
-      className="group -mx-3 grid cursor-pointer grid-cols-1 gap-x-8 gap-y-3 rounded-sm px-3 py-4 transition-colors hover:bg-fog md:grid-cols-[240px_1fr_auto] md:items-start"
+      className={cx(
+        "group grid cursor-pointer grid-cols-1 gap-x-8 gap-y-3 md:grid-cols-[240px_1fr_auto] md:items-start",
+        boxed ? "rounded-sm border border-hairline bg-pure-white p-5 shadow-sm transition-colors hover:border-ink-black" : "py-4",
+      )}
     >
       <div className="min-w-0">
         <Link href={href} className="t-body block font-medium text-ink-black group-hover:text-schematic-blue">
