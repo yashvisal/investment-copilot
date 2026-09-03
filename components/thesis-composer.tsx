@@ -134,7 +134,7 @@ export function ThesisComposer({ preloadedCanonical }: { preloadedCanonical: Pre
           e.preventDefault();
           void plan();
         }}
-        className="flex items-end gap-3 rounded-sm border border-hairline bg-pure-white p-3 shadow-sm focus-within:border-ink-black"
+        className="relative flex items-end gap-3 rounded-sm border border-hairline bg-pure-white p-3 shadow-sm focus-within:border-ink-black"
       >
         <AutoTextarea
           value={thesis}
@@ -150,42 +150,40 @@ export function ThesisComposer({ preloadedCanonical }: { preloadedCanonical: Pre
           placeholder="Describe the companies you want to find"
           className="t-lead min-h-[36px] flex-1 bg-transparent px-2 py-1 text-ink-black outline-none placeholder:text-concrete"
         />
-        <span className="relative shrink-0">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => void suggestOne()}
-            disabled={suggesting || deriving}
-            aria-label="Suggest a thesis"
-            aria-busy={suggesting}
-            title="Suggest a thesis"
-            className="w-9 px-0! disabled:opacity-100"
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => void suggestOne()}
+          disabled={suggesting || deriving}
+          aria-label="Suggest a thesis"
+          aria-busy={suggesting}
+          title="Suggest a thesis"
+          className="w-9 shrink-0 px-0! disabled:opacity-100"
+        >
+          <Wand />
+        </Button>
+        {suggesting && (
+          <svg
+            className="pointer-events-none absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] overflow-visible"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
           >
-            <Wand />
-          </Button>
-          {suggesting && (
-            <svg
-              className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <rect
-                x="0"
-                y="0"
-                width="100"
-                height="100"
-                rx="2"
-                pathLength={100}
-                fill="none"
-                stroke="var(--color-signal-orange)"
-                strokeWidth="2"
-                vectorEffect="non-scaling-stroke"
-                className="trace"
-              />
-            </svg>
-          )}
-        </span>
+            <rect
+              x="0"
+              y="0"
+              width="100"
+              height="100"
+              rx="0.5"
+              pathLength={100}
+              fill="none"
+              stroke="var(--color-signal-orange)"
+              strokeWidth="2"
+              vectorEffect="non-scaling-stroke"
+              className="trace"
+            />
+          </svg>
+        )}
         <Button type="submit" variant="dark" disabled={deriving || !thesis.trim()} className="w-24 shrink-0 disabled:opacity-100">
           {deriving ? "Planning" : "Plan"}
         </Button>

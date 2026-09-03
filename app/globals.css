@@ -156,9 +156,9 @@ html {
   to { stroke-dashoffset: -100; }
 }
 .trace {
-  stroke-dasharray: 34 66;
+  stroke-dasharray: 28 72;
   stroke-dashoffset: 0;
-  animation: trace 1.1s linear infinite;
+  animation: trace 1.6s linear infinite;
 }
 
 textarea.autogrow {
