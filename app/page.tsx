@@ -1,14 +1,8 @@
-import { preloadQuery } from "convex/nextjs";
-import { api } from "@/convex/_generated/api";
 import { Nav } from "@/components/nav";
 import { ThesisComposer } from "@/components/thesis-composer";
 import { Page } from "@/components/ui";
 
-export const dynamic = "force-dynamic";
-
-export default async function Home() {
-  // Fetched on the server so the "latest run" line arrives with the page instead of popping in.
-  const canonical = await preloadQuery(api.runs.canonical);
+export default function Home() {
   return (
     <>
       <Nav />
@@ -20,7 +14,7 @@ export default async function Home() {
           does not know.
         </p>
         <div className="mt-12">
-          <ThesisComposer preloadedCanonical={canonical} />
+          <ThesisComposer />
         </div>
       </Page>
     </>

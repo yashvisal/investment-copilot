@@ -1,6 +1,6 @@
 "use client";
 
-import { useAction, useMutation, usePreloadedQuery, type Preloaded } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -40,11 +40,10 @@ function Wand() {
 
 type Block = { reason: "budget" | "disabled" | "busy"; message: string; contact: string };
 
-export function ThesisComposer({ preloadedCanonical }: { preloadedCanonical: Preloaded<typeof api.runs.canonical> }) {
+export function ThesisComposer() {
   const router = useRouter();
   const ingest = useAction(api.pipeline.ingestThesis);
   const start = useMutation(api.runs.start);
-  const canonical = usePreloadedQuery(preloadedCanonical);
 
   const [thesis, setThesis] = useState("");
   const [planned, setPlanned] = useState<string | null>(null);
@@ -240,11 +239,11 @@ export function ThesisComposer({ preloadedCanonical }: { preloadedCanonical: Pre
         </section>
       )}
 
-      {canonical && !conditions && (
+      {!conditions && (
         <Meta className="mt-10">
-          Or read the{" "}
-          <Link href={`/runs/${canonical._id}`} className="text-schematic-blue hover:underline">
-            latest completed run
+          Or{" "}
+          <Link href="/runs" className="text-schematic-blue hover:underline">
+            view previous runs
           </Link>{" "}
           without spending anything.
         </Meta>
