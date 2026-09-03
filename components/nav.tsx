@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { ButtonLink, cx } from "./ui";
+import { ButtonLink, Skeleton, cx } from "./ui";
 
 export function Nav() {
   const budget = useQuery(api.budget.get);
@@ -17,7 +17,9 @@ export function Nav() {
           Investment Copilot
         </Link>
         <div className="flex items-center gap-3">
-          <span className="t-mono tnum mr-3 text-slate">{left}</span>
+          <span className="t-mono tnum mr-3 inline-flex min-w-[80px] justify-end text-slate">
+            {budget ? left : <Skeleton className="h-3 w-16" />}
+          </span>
           <ButtonLink href="/runs" variant="ghost" className={cx(path.startsWith("/runs") && "bg-fog")}>
             Runs
           </ButtonLink>
