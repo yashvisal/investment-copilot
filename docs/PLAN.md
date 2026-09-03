@@ -7,9 +7,9 @@ Thesis in, researched shortlist out. Built on Parallel FindAll, Task, Responses,
 | Stage | Parallel primitive | Processor | Cap | Est. latency | Est. cost |
 |---|---|---|---|---|---|
 | Estimate | FindAll `preview` | preview | 10 candidates | 1-2 min | $0.10 |
-| Discover | FindAll run | `core` generator | user picks 10 / 15 / 20 / 25 | 3-8 min | $2 + $0.15/match |
-| Prioritize | none (our code) | n/a | top 12 | instant | $0 |
-| Screen | Task Group | `base` | 12 | 1-3 min | $0.01/run |
+| Discover | FindAll run | `core` generator | user picks 10 / 15 / 20 | 3-8 min | $2 + $0.15/match |
+| Prioritize | none (our code) | n/a | top 10 | instant | $0 |
+| Screen | Task Group | `base` | 10 | 1-3 min | $0.01/run |
 | Diligence | Task run | `pro` | MAX_DILIGENCE=4 | 3-8 min | $0.10/run |
 | Follow-up | Responses API | effort `low` | on demand | 5-10 s | $0.01/request |
 | Verify citation | Extract | n/a | on demand | 1-5 s | $0.001/url |

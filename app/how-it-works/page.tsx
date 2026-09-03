@@ -15,7 +15,7 @@ const STEPS: GraphNode[] = [
   {
     id: "discover",
     name: "Discover",
-    count: "10 to 25",
+    count: "10 to 20",
     cost: "$2 + $0.15 each",
     time: "3 to 8 min",
     what: "The open web is searched for companies that satisfy every condition. Each match arrives with evidence for each condition, a confidence level, and the pages it came from.",
@@ -24,16 +24,16 @@ const STEPS: GraphNode[] = [
   {
     id: "prioritize",
     name: "Prioritize",
-    count: "Top 12",
+    count: "Top 10",
     cost: "$0",
     time: "Instant",
-    what: "Matches are ranked on the strength of their discovery evidence alone: how many conditions passed at high confidence, how many sources backed them, and whether the URL is the company's own. Nothing is spent here.",
+    what: "Matches are ranked on the strength of their discovery evidence alone: how many conditions passed at high confidence, how many sources backed them, and whether the URL is the company's own. The top ten go forward. If discovery found exactly ten, all of them do. Nothing is spent here.",
     output: "A ranked shortlist",
   },
   {
     id: "screen",
     name: "Screen",
-    count: "12",
+    count: "10",
     cost: "$0.03 each",
     time: "1 to 4 min",
     what: "A light research task establishes what each company sells, who buys it, funding stage, enterprise traction, and recent momentum. Fixed rules, not a model, sort each one into High priority, Investigate, or Pass.",

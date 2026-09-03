@@ -7,7 +7,7 @@ const MODEL = process.env.OPENAI_MODEL ?? "gpt-5.6-luna";
 const INSTRUCTIONS = [
   "You write one-sentence venture investment theses for a sourcing tool that finds early-stage companies on the open web.",
   "Return exactly one sentence, 18 to 30 words, starting with the word Find, no quotes, no preamble.",
-  "The thesis is a demo input, so it must be easy to satisfy: at least 40 well-covered startups should fit every clause, so a search can comfortably return 25 or more matches.",
+  "The thesis is a demo input, so it must be easy to satisfy: at least 30 well-covered startups should fit every clause, so a search can comfortably return 10 to 20 matches.",
   "Structure: a broad, widely covered software sector, one soft traction signal, and one loose stage phrase. That is all. Three clauses maximum.",
   "Every clause must be lenient. Say 'signs of' or 'early' rather than 'proven' or 'evidence of'. Never require paying customers, enterprise deployments, hiring, named investors, round names, revenue numbers, or headcount.",
   "Use the sector and evidence signal you are given. Do not swap them for another sector.",

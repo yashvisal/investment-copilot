@@ -34,10 +34,10 @@ export const STAGE_CONFIG = {
   diligence: { processor: "pro" as TaskProcessor, expectedMinutes: [5, 15] as const },
 } as const;
 
-export const MATCH_LIMIT_OPTIONS = [10, 15, 20, 25] as const;
+export const MATCH_LIMIT_OPTIONS = [10, 15, 20] as const;
 export type MatchLimit = (typeof MATCH_LIMIT_OPTIONS)[number];
 
-export const DEFAULT_SCREEN_LIMIT = 12;
+export const DEFAULT_SCREEN_LIMIT = 10;
 export const DEFAULT_DILIGENCE_LIMIT = 4;
 
 export interface RunCaps {

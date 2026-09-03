@@ -12,14 +12,14 @@ Thesis → Discover → Prioritize → Screen → Diligence → Decide
           core        $0          core      pro
 ```
 
-Spend rises with conviction. Discovery is broad and uses FindAll's `core` generator. Prioritization is deterministic and free, using only FindAll's match-condition outputs and their confidence. The top 12 are screened with a `core` Task Group. At most four finalists get a `pro` diligence task. The strongest processor never runs across the whole set.
+Spend rises with conviction. Discovery is broad and uses FindAll's `core` generator. Prioritization is deterministic and free, using only FindAll's match-condition outputs and their confidence. The top 10 are screened with a `core` Task Group. At most four finalists get a `pro` diligence task. The strongest processor never runs across the whole set.
 
 | Stage | Primitive | Processor | Cap | Unit cost |
 |---|---|---|---|---|
 | Estimate | FindAll ingest | n/a | free | $0 |
-| Discover | FindAll run | `core` | 10, 15, 20, or 25 | $2.00 + $0.15 per match |
-| Prioritize | none | n/a | top 12 | $0 |
-| Screen | Task Group | `core` | 12 | $0.025 per run |
+| Discover | FindAll run | `core` | 10, 15, or 20 | $2.00 + $0.15 per match |
+| Prioritize | none | n/a | top 10 | $0 |
+| Screen | Task Group | `core` | 10 | $0.025 per run |
 | Diligence | Task | `pro` | 4 | $0.10 per run |
 | Follow-up question | Responses API | effort `low` | on demand | $0.01 per request |
 | Verify citation | Extract | n/a | on demand | $0.001 per URL |
@@ -35,7 +35,7 @@ Classification is deterministic. The screening task returns nullable facts; a ru
 
 ## Cost controls
 
-- Match limit is a fixed choice: 10, 15, 20, or 25.
+- Match limit is a fixed choice: 10, 15, or 20. Prioritization keeps the top 10, so a 10-company discovery screens everything it found.
 - Screening and diligence caps are enforced server-side.
 - A project research budget lives in Convex. Each run's actual spend is added to it. If the estimate for a new run exceeds what remains, the run is refused and the UI explains how to request more.
 - Monitoring is implemented behind `ENABLE_MONITORS`. The public demo shows the "disabled to avoid ongoing API costs" message; production flips the flag.
