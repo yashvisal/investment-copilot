@@ -74,3 +74,19 @@ export const addSpend = internalMutation({
     return null;
   },
 });
+
+/** Admin reset from the CLI: zero the spend and optionally set a new allocation. */
+export const reset = internalMutation({
+  args: { allocatedUsd: v.optional(v.number()) },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const row = await ctx.db
+      .query("settings")
+      .withIndex("by_key", (q) => q.eq("key", "budget"))
+      .unique();
+    const allocatedUsd = args.allocatedUsd ?? row?.allocatedUsd ?? DEFAULT_ALLOCATION_USD;
+    if (row) await ctx.db.patch(row._id, { allocatedUsd, spentUsd: 0 });
+    else await ctx.db.insert("settings", { key: "budget", allocatedUsd, spentUsd: 0, contact: DEFAULT_CONTACT });
+    return null;
+  },
+});
