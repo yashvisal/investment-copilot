@@ -200,6 +200,8 @@ export const patch = internalMutation({
     terminationReason: v.optional(v.string()),
     generatedCount: v.optional(v.number()),
     matchedCount: v.optional(v.number()),
+    checkedCount: v.optional(v.number()),
+    lastProgressAt: v.optional(v.number()),
   },
   returns: v.null(),
   handler: async (ctx, { runId, ...fields }) => {

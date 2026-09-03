@@ -97,6 +97,10 @@ export default defineSchema({
     isCanonical: v.optional(v.boolean()),
     generatedCount: v.optional(v.number()),
     matchedCount: v.optional(v.number()),
+    /** Candidates with a verdict (matched or unmatched). Zero for too long means the job stalled. */
+    checkedCount: v.optional(v.number()),
+    /** Last time any discovery counter moved. Drives the stall watchdog. */
+    lastProgressAt: v.optional(v.number()),
   })
     .index("by_status", ["status"])
     .index("by_canonical", ["isCanonical"]),

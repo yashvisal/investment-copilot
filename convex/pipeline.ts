@@ -28,6 +28,10 @@ import {
 import type { Claim, RawFieldBasis } from "../lib/parallel/types";
 
 const POLL_MS = 8000;
+/** Discovery is declared stalled if nothing has been checked by this age... */
+const STALL_NO_CHECKS_MS = 5 * 60_000;
+/** ...or if no counter has moved for this long. */
+const STALL_NO_PROGRESS_MS = 4 * 60_000;
 
 function parallelClient(): Parallel {
   const apiKey = process.env.PARALLEL_API_KEY;
@@ -138,15 +142,43 @@ export const pollDiscover = internalAction({
         candidates,
       });
 
-      if (generated !== run.generatedCount || matched !== run.matchedCount) {
-        await ctx.runMutation(internal.runs.patch, { runId, generatedCount: generated, matchedCount: matched });
+      const checked = result.candidates.filter((c) => c.match_status !== "generated").length;
+      const now = Date.now();
+      const moved = generated !== run.generatedCount || matched !== run.matchedCount || checked !== (run.checkedCount ?? 0);
+      if (moved) {
+        await ctx.runMutation(internal.runs.patch, { runId, generatedCount: generated, matchedCount: matched, checkedCount: checked, lastProgressAt: now });
       }
       if (newlyMatched > 0 || inserted > 0) {
-        await log(ctx, runId, "discover", "progress", `${generated} candidates evaluated, ${matched} matched.`);
+        await log(ctx, runId, "discover", "progress", `${generated} candidates found, ${checked} checked, ${matched} matched.`);
       }
       await ctx.runMutation(internal.runs.updateStage, { runId, stage: "discover", stats: { count: matched } });
 
       if (status.is_active) {
+        // Stall watchdog. A healthy job checks its first candidates within a couple of
+        // minutes and keeps moving. If it does neither, stop paying attention to it.
+        const startedAt = run.stages.discover.startedAt ?? run._creationTime;
+        const lastProgress = moved ? now : (run.lastProgressAt ?? startedAt);
+        const stalled =
+          (checked === 0 && now - startedAt > STALL_NO_CHECKS_MS) || now - lastProgress > STALL_NO_PROGRESS_MS;
+        if (stalled) {
+          const why =
+            checked === 0
+              ? `Discovery found ${generated} candidates but checked none of them in ${Math.round((now - startedAt) / 60000)} minutes.`
+              : `Discovery made no progress for ${Math.round((now - lastProgress) / 60000)} minutes (${generated} found, ${checked} checked, ${matched} matched).`;
+          await log(ctx, runId, "discover", "error", `${why} Stopping the run and cancelling the job upstream.`);
+          try {
+            await client.beta.findall.cancel(run.findallId);
+          } catch (e) {
+            await log(ctx, runId, "discover", "warn", `Upstream cancel failed: ${e instanceof Error ? e.message : String(e)}`);
+          }
+          await ctx.runMutation(internal.runs.updateStage, { runId, stage: "discover", stats: { completedAt: now, note: "stalled" } });
+          await ctx.runMutation(internal.runs.setStatus, {
+            runId,
+            status: "failed",
+            error: `${why} The discovery job stalled upstream. Run the thesis again.`,
+          });
+          return null;
+        }
         await ctx.scheduler.runAfter(POLL_MS, internal.pipeline.pollDiscover, { runId });
         return null;
       }
@@ -160,7 +192,7 @@ export const pollDiscover = internalAction({
         stats: { completedAt: Date.now(), count: matched, spendUsd: spend, note: reason },
       });
       await ctx.runMutation(internal.budget.addSpend, { usd: spend });
-      await log(ctx, runId, "discover", "info", `Discovery finished (${reason}). ${matched} matched of ${generated} evaluated. Spend $${spend.toFixed(2)}.`);
+      await log(ctx, runId, "discover", "info", `Discovery finished (${reason}). ${matched} matched of ${generated} found. Spend $${spend.toFixed(2)}.`);
 
       if (matched === 0) {
         await ctx.runMutation(internal.runs.setStatus, { runId, status: "failed", error: "Discovery found no matches. Try a broader thesis." });
