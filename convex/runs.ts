@@ -152,6 +152,22 @@ export const setStatus = internalMutation({
   },
 });
 
+/** Stop an active run. Polling loops exit on the next tick; the discovery job is cancelled upstream. */
+export const cancel = mutation({
+  args: { runId: v.id("runs") },
+  returns: v.null(),
+  handler: async (ctx, { runId }) => {
+    const run = await ctx.db.get(runId);
+    if (!run || run.status === "complete" || run.status === "failed") return null;
+    await ctx.db.patch(runId, { status: "failed", error: "Stopped by you." });
+    await ctx.db.insert("events", { runId, stage: run.status, at: Date.now(), level: "info", message: "Run stopped by you." });
+    if (run.status === "discovering" && run.findallId) {
+      await ctx.scheduler.runAfter(0, internal.pipeline.cancelDiscover, { runId });
+    }
+    return null;
+  },
+});
+
 export const patch = internalMutation({
   args: {
     runId: v.id("runs"),

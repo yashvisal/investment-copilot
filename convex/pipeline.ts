@@ -740,3 +740,23 @@ function stripClaims(claims: Claim[]): Claim[] {
     reasoning: c.reasoning.slice(0, 4000),
   }));
 }
+
+/* ------------------------------------------------------------------ */
+/* Cancel: stop the upstream discovery job when a run is stopped.      */
+/* ------------------------------------------------------------------ */
+
+export const cancelDiscover = internalAction({
+  args: { runId: v.id("runs") },
+  returns: v.null(),
+  handler: async (ctx, { runId }): Promise<null> => {
+    const run: Doc<"runs"> | null = await ctx.runQuery(internal.runs.getInternal, { runId });
+    if (!run?.findallId) return null;
+    try {
+      await parallelClient().beta.findall.cancel(run.findallId);
+      await ctx.runMutation(internal.events.log, { runId, stage: "discover", level: "info", message: "Discovery job cancelled upstream." });
+    } catch (e) {
+      await ctx.runMutation(internal.events.log, { runId, stage: "discover", level: "warn", message: `Could not cancel upstream discovery: ${e instanceof Error ? e.message : String(e)}` });
+    }
+    return null;
+  },
+});

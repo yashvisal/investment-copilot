@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { elapsed, hostname, millions, timeOfDay, usd } from "@/lib/format";
 import { BUCKET_LABEL, bucketOf, firstSentences, orderCompanies, type Bucket } from "@/lib/order";
-import { CLASS_LABEL, DecisionControl, Empty, Eyebrow, Meta, Page, Skeleton, SkeletonCard, Spinner, Wire, cx, type WireNode } from "./ui";
+import { Button, CLASS_LABEL, DecisionControl, Empty, Eyebrow, Meta, Page, Skeleton, SkeletonCard, Spinner, Wire, cx, type WireNode } from "./ui";
 import { Nav } from "./nav";
 
 type StageKey = "discover" | "prioritize" | "screen" | "diligence";
@@ -30,6 +30,7 @@ export function RunView({ runId }: { runId: Id<"runs"> }) {
   const run = useQuery(api.runs.get, { runId });
   const companies = useQuery(api.companies.forRun, { runId });
   const events = useQuery(api.events.forRun, { runId });
+  const cancel = useMutation(api.runs.cancel);
   const active = !!run && run.status !== "complete" && run.status !== "failed";
   const now = useNow(active);
   const ordered = useMemo(() => orderCompanies(companies ?? []), [companies]);
@@ -48,11 +49,13 @@ export function RunView({ runId }: { runId: Id<"runs"> }) {
           <Eyebrow>Thesis</Eyebrow>
           <h1 className="t-title mt-3 text-ink-black">{run.thesis}</h1>
         </div>
-        <Progress run={run} now={now} matched={ordered.length} />
+        <Progress run={run} now={now} matched={ordered.length} onStop={() => void cancel({ runId: run._id })} />
         {run.error && <p className="t-small mt-6 text-status-red">{run.error}</p>}
 
+        {run.status === "discovering" && <DiscoveryFeed run={run} companies={companies ?? []} />}
+
         {ordered.length === 0 ? (
-          <Empty>{run.status === "discovering" ? "Matches appear here as discovery confirms them." : "No matched companies."}</Empty>
+          run.status === "discovering" ? null : <Empty>No matched companies.</Empty>
         ) : (
           <div className="mt-14 space-y-12">
             {groups.map((g) => (
@@ -71,7 +74,7 @@ export function RunView({ runId }: { runId: Id<"runs"> }) {
           </div>
         )}
 
-        {unmatched.length > 0 && (
+        {unmatched.length > 0 && run.status !== "discovering" && (
           <details className="mt-10">
             <summary className="t-mono cursor-pointer list-none text-slate hover:text-ink-black">
               {unmatched.length} more evaluated at discovery and not matched
@@ -91,6 +94,51 @@ export function RunView({ runId }: { runId: Id<"runs"> }) {
         <EventLog events={events ?? []} active={active} />
       </Page>
     </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Discovery feed: what the search is looking at right now.            */
+/* ------------------------------------------------------------------ */
+
+const FEED_SIZE = 8;
+
+function DiscoveryFeed({ run, companies }: { run: Doc<"runs">; companies: Doc<"companies">[] }) {
+  const recent = [...companies].sort((a, b) => b._creationTime - a._creationTime).slice(0, FEED_SIZE);
+  const evaluated = run.generatedCount ?? companies.length;
+  const matched = companies.filter((c) => c.matchStatus === "matched").length;
+
+  return (
+    <section className="mt-14">
+      <div className="flex flex-wrap items-baseline justify-between gap-4">
+        <div className="flex items-baseline gap-3">
+          <h2 className="t-body font-medium text-ink-black">Candidates under review</h2>
+          <Meta className="tnum">
+            {evaluated} evaluated · {matched} of {run.matchLimit} matched
+          </Meta>
+        </div>
+        <Meta>Matches move up into the board as they are confirmed.</Meta>
+      </div>
+
+      <ol className="mt-4 space-y-2">
+        <li className="flex items-center gap-4 rounded-sm border border-dashed border-hairline px-4 py-3">
+          <Spinner />
+          <Skeleton className="h-3 w-40" />
+          <Skeleton className="ml-auto h-3 w-28" />
+        </li>
+        {recent.map((c) => {
+          const hit = c.matchStatus === "matched";
+          return (
+            <li key={c._id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-sm border border-hairline bg-pure-white px-4 py-3">
+              <span className={cx("t-body font-medium", hit ? "text-ink-black" : "text-graphite")}>{c.name}</span>
+              <Meta className="truncate">{hostname(c.url)}</Meta>
+              <Meta className={cx("ml-auto shrink-0", hit && "text-signal-orange")}>{hit ? "Matched" : (failedCondition(c) ?? "Not matched")}</Meta>
+            </li>
+          );
+        })}
+      </ol>
+      {companies.length > FEED_SIZE && <Meta className="mt-3 tnum">{companies.length - FEED_SIZE} earlier candidates not shown.</Meta>}
+    </section>
   );
 }
 
@@ -199,7 +247,7 @@ function failedCondition(c: Doc<"companies">): string | null {
 
 /* ------------------------------------------------------------------ */
 
-function Progress({ run, now, matched }: { run: Doc<"runs">; now: number; matched: number }) {
+function Progress({ run, now, matched, onStop }: { run: Doc<"runs">; now: number; matched: number; onStop: () => void }) {
   const activeKey: StageKey | null =
     run.status === "discovering" ? "discover" : run.status === "prioritizing" ? "prioritize" : run.status === "screening" ? "screen" : run.status === "diligencing" ? "diligence" : null;
   const activeIdx = activeKey ? STAGE_ORDER.indexOf(activeKey) : run.status === "complete" ? 5 : -1;
@@ -237,10 +285,17 @@ function Progress({ run, now, matched }: { run: Doc<"runs">; now: number; matche
         {activeKey && <Spinner />}
         <span>{line}</span>
       </p>
-      <Meta className="tnum mt-1">
-        {activeKey && stats?.startedAt ? `${STAGE_LABEL[activeKey]} for ${elapsed(stats.startedAt, undefined, now)} · ` : ""}
-        {usd(run.spendUsd)} spent of {usd(run.estimatedCostUsd)} estimated
-      </Meta>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-4">
+        <Meta className="tnum">
+          {activeKey && stats?.startedAt ? `${STAGE_LABEL[activeKey]} for ${elapsed(stats.startedAt, undefined, now)} · ` : ""}
+          {usd(run.spendUsd)} spent of {usd(run.estimatedCostUsd)} estimated
+        </Meta>
+        {activeKey && (
+          <Button variant="ghost" onClick={onStop} className="h-7 px-3">
+            Stop run
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
