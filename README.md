@@ -1,63 +1,74 @@
 # Investment Copilot
 
-Turn an investment thesis into the few companies actually worth a deeper look. Built on [Parallel](https://parallel.ai) FindAll, Task, Responses, Extract, and Monitor, with Convex for run state and Next.js on Vercel.
+A thesis goes in. The few companies worth a deeper look come out, with every claim carrying its sources, its confidence, and an honest "unknown" when the web does not know.
 
-The product is not an autonomous investor. It compresses the hours an investor spends searching the open web before deciding whether a company deserves real diligence, and it shows its evidence at every step.
+Built in a day on [Parallel](https://parallel.ai) as a portfolio piece for the Deployed Engineer role. Live at [investment-sourcing-copilot.vercel.app](https://investment-sourcing-copilot.vercel.app).
 
-## The funnel
+## The pipeline
 
 ```
-Thesis → Discover → Prioritize → Screen → Diligence → Decide
-          FindAll     our code    Task      Task       human
-          core        $0          core      pro
+Thesis ──▶ Discover ──▶ Prioritize ──▶ Screen ──▶ Diligence ──▶ Decide
+           FindAll      our code       Task Group   Task          you
+           core         free           core         pro
+           10–20        top 10         10           at most 4
 ```
 
-Spend rises with conviction. Discovery is broad and uses FindAll's `core` generator. Prioritization is deterministic and free, using only FindAll's match-condition outputs and their confidence. The top 10 are screened with a `core` Task Group. At most four finalists get a `pro` diligence task. The strongest processor never runs across the whole set.
+Spend rises only as conviction does. Each stage narrows the field and costs a little more per company than the last, so the strongest processor only ever runs on the handful that earned it. A ten-company run costs about $4 and takes 15 to 25 minutes end to end.
 
-| Stage | Primitive | Processor | Cap | Unit cost |
+| Stage | Parallel primitive | Processor | Scope | Cost |
 |---|---|---|---|---|
-| Estimate | FindAll ingest | n/a | free | $0 |
-| Discover | FindAll run | `core` | 10, 15, or 20 | $2.00 + $0.15 per match |
-| Prioritize | none | n/a | top 10 | $0 |
-| Screen | Task Group | `core` | 10 | $0.025 per run |
-| Diligence | Task | `pro` | 4 | $0.10 per run |
-| Follow-up question | Responses API | effort `low` | on demand | $0.01 per request |
-| Verify citation | Extract | n/a | on demand | $0.001 per URL |
-| Watch company | Monitor `snapshot` | `lite` | flag-gated | $0.003 per execution |
+| Plan | FindAll `ingest` | free | one sentence → checkable conditions | $0 |
+| Discover | FindAll `create` / `result` | `core` generator | 10, 15, or 20 matches | $2 + $0.15 per match |
+| Prioritize | none | deterministic | top 10 by discovery evidence | $0 |
+| Screen | Task Group, 10 runs concurrently | `core` | ten cited facts per company | $0.025 per run |
+| Diligence | Task runs, created concurrently | `pro` | 16-field memo with footnoted sources | $0.10 per run |
+| Verify a source | Extract | n/a | re-fetch the page, check the passage is still there | $0.001 per URL |
+| Track changes | Monitor `snapshot` | `lite` | weekly re-run of the screen | flag-gated |
 
-A 10-company run is about $4.15. The thesis page shows this estimate before anything is spent.
+## Decisions and why
 
-## Research basis as a first-class record
+**FindAll for discovery, not search.** Search returns pages. FindAll returns entities that each satisfy every planned condition, with per-condition evidence and confidence. That evidence is what makes the free prioritization step possible: we rank on how many conditions passed at high confidence, how many sources backed them, and whether the URL is the company's own site. No model call, no cost.
 
-Every researched field becomes a `claim` row: value, reasoning, confidence, citations with excerpts, and derived flags for `supported`, `conflicting`, and `isUnknown`. The company page reads from claims, not from nested task output. That is what powers the evidence strip, the unsupported-claim list, conflict flags, the "Unknown: insufficient credible evidence" rendering, and later the eval suite.
+**The thesis is the whole objective.** An early version appended a hidden "objective hint" to every thesis so results skewed early-stage. When a legal-tech thesis was planned against an AI-infrastructure hint, discovery evaluated 67 candidates and matched none, because the conditions contradicted each other. The hint is gone. What you type is exactly what gets planned. If you want early-stage, say so in the sentence and it becomes a condition like any other.
 
-Classification is deterministic. The screening task returns nullable facts; a rules function in `lib/parallel/classify.ts` maps facts and confidence to Pass, Investigate, or High priority with human-readable reasons. The model never votes on the verdict, so screening agreement in evals measures a policy you can tune.
+**Core everywhere except diligence.** Screening uses the `core` processor inside a Task Group so all ten runs execute at once. Diligence uses `pro` because that is where depth matters, and the four tasks are created concurrently rather than in sequence. Neither `-fast` variant is used; the docs steer away from them for research quality.
 
-## Cost controls
+**Facts from the model, verdicts from code.** The screening task returns nullable facts only. A rules function in `lib/parallel/classify.ts` maps those facts and their confidence to Pass, Investigate, or High priority, with human-readable reasons. The model never votes, so the policy is tunable and testable. Only acquisitions, shutdowns, subsidiaries, and a clear sector miss disqualify a company. Stage, size, and public listing never do unless the thesis asks.
 
-- Match limit is a fixed choice: 10, 15, or 20. Prioritization keeps the top 10, so a 10-company discovery screens everything it found.
-- Screening and diligence caps are enforced server-side.
-- A project research budget lives in Convex. Each run's actual spend is added to it. If the estimate for a new run exceeds what remains, the run is refused and the UI explains how to request more.
-- Monitoring is implemented behind `ENABLE_MONITORS`. The public demo shows the "disabled to avoid ongoing API costs" message; production flips the flag.
+**Research basis as a first-class record.** Every researched field becomes a `claim` row: value, reasoning, confidence, citations with excerpts, plus derived `supported`, `conflicting`, and `isUnknown` flags. The company page reads claims, not raw task output. That is what powers the evidence strip, bracketed footnotes, conflict flags, and the "Unknown: insufficient credible evidence" rendering.
+
+**Progress from the event stream.** While diligence runs, the poller opens each task's SSE event stream for a few seconds and harvests the latest progress message, so the run page shows what the research is doing rather than a spinner.
+
+**A stall watchdog.** One discovery job found 100 candidates in sixteen minutes and never began evaluating them. Our poller would have waited indefinitely. It now fails the run and cancels the job upstream if nothing has been checked after five minutes or nothing has moved for four, and the discover view reports found, checked, and matched as three separate numbers.
+
+**Monitors behind a flag.** Weekly change tracking is fully implemented on the Monitor API but gated by `ENABLE_MONITORS`, so a public demo cannot accrue recurring charges.
+
+**A budget with a hard stop.** A Convex counter holds the project's research allocation. Each run's actual spend is added on completion. If a new run's estimate exceeds what remains, it is refused with a message that says who to ask. Parallel's balance endpoint needs an OAuth account token, not an API key, so the counter is ours.
+
+## What is not Parallel
+
+The wand next to the thesis box streams a demo-friendly thesis from OpenAI through a Next.js route handler. It exists so the demo never stalls on a blank box. Everything that touches the web is Parallel.
 
 ## Architecture
 
-- `convex/` holds the schema and the pipeline. Stages are Convex Node actions chained by the scheduler and polled every eight seconds, so no request ever waits on Parallel and the pipeline survives Vercel's function timeout.
-- `lib/parallel/` is pure TypeScript: task specs, the cost model, basis normalization, prioritization, and classification. Shared by Convex actions, the UI, and scripts.
-- `app/` is the Next.js App Router UI. Three views: thesis, run, company. The run page subscribes to Convex, so candidates appear as FindAll matches them and screens fill in as tasks complete.
+- `convex/` holds the schema and the pipeline. Stages are Convex Node actions chained by the scheduler and polled every eight seconds, so no HTTP request ever waits on Parallel and the pipeline survives serverless timeouts. Runs, companies, claims, events, and the budget are all live queries, so the UI updates as work lands.
+- `lib/parallel/` is pure TypeScript shared by Convex and the UI: task specs with per-field prompts, the cost model, basis normalization, prioritization, and classification.
+- `app/` is the Next.js App Router UI. Home, run board, company memo, runs list, and a how-it-works page. The home page preloads the latest run on the server so nothing pops in.
 
 ## Running locally
 
 ```bash
 pnpm install
-cp .env.example .env.local   # add PARALLEL_API_KEY
-npx convex dev               # creates a dev deployment, writes NEXT_PUBLIC_CONVEX_URL
+cp .env.example .env.local        # PARALLEL_API_KEY, OPENAI_API_KEY
+npx convex dev                     # creates a dev deployment, writes NEXT_PUBLIC_CONVEX_URL
 npx convex env set PARALLEL_API_KEY <key>
+npx convex env set OPENAI_API_KEY <key>
 npx convex env set ENABLE_MONITORS false
-npx convex env set ENABLE_LIVE_RUNS true
 pnpm dev
 ```
 
+Deploys are `npx convex deploy` for the backend and `vercel deploy --prod` for the frontend.
+
 ## Design
 
-Styled after Parallel's own system: cream canvas, serif for reading, monospace for interface chrome, hairline borders, 2px radii. See `DESIGN.md`. Parallel's typefaces are proprietary, so Source Serif 4 and IBM Plex Mono stand in.
+White canvas, one grotesque sans for reading, one mono for interface chrome, hairline borders, 2px radii, a single orange accent for the moments that cost money. Modeled on parallel.ai itself. Inter and IBM Plex Mono stand in for Parallel's proprietary faces.
