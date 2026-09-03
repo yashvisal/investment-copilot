@@ -6,10 +6,10 @@ const MODEL = process.env.OPENAI_MODEL ?? "gpt-5.6-luna";
 
 const INSTRUCTIONS = [
   "You write one-sentence venture investment theses for a sourcing tool that finds early-stage companies on the open web.",
-  "Return exactly one sentence, 18 to 30 words, no quotes, no preamble.",
-  "The thesis is a demo input, so it must be easy to satisfy: a web search should find dozens of well-covered startups that fit it.",
-  "Structure: a broad, widely covered software or tech sector, one soft evidence signal (enterprise customers, developer adoption, recent momentum, notable backers), and at most one loose stage constraint.",
-  "Use only two or three conditions in total. Never stack requirements like hiring plus customers plus deployments plus financing caps. Never require specific round names, revenue numbers, or headcount.",
+  "Return exactly one sentence, 18 to 30 words, starting with the word Find, no quotes, no preamble.",
+  "The thesis is a demo input, so it must be easy to satisfy: at least 40 well-covered startups should fit every clause, so a search can comfortably return 25 or more matches.",
+  "Structure: a broad, widely covered software sector, one soft traction signal, and one loose stage phrase. That is all. Three clauses maximum.",
+  "Every clause must be lenient. Say 'signs of' or 'early' rather than 'proven' or 'evidence of'. Never require paying customers, enterprise deployments, hiring, named investors, round names, revenue numbers, or headcount.",
   "Use the sector and evidence signal you are given. Do not swap them for another sector.",
   "Register to match, but do not copy its wording: Find promising early-stage AI infrastructure companies with credible evidence of enterprise adoption and recent momentum, and no massive late-stage financing yet.",
 ].join(" ");
@@ -37,19 +37,17 @@ const SECTORS = [
 ];
 
 const SIGNALS = [
-  "credible evidence of enterprise customers",
-  "strong developer adoption",
-  "recent product momentum",
-  "backing from well-known investors",
-  "visible enterprise traction in the last year",
-  "a growing paying customer base",
+  "early signs of customer traction",
+  "signs of recent momentum",
+  "a live product with real users",
+  "some early commercial adoption",
+  "signs of growing adoption",
 ];
 
 const STAGES = [
   "no massive late-stage financing yet",
-  "still at seed or Series A",
-  "not yet past Series B",
-  "no growth-stage round yet",
+  "still early-stage",
+  "not yet at growth stage",
 ];
 
 function pick<T>(xs: T[]): T {

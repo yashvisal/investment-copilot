@@ -168,6 +168,30 @@ export const cancel = mutation({
   },
 });
 
+/** Erase a run and everything hanging off it. Internal only; run from the CLI. */
+export const remove = internalMutation({
+  args: { runId: v.id("runs") },
+  returns: v.object({ companies: v.number(), claims: v.number(), events: v.number() }),
+  handler: async (ctx, { runId }) => {
+    const companies = await ctx.db.query("companies").withIndex("by_run", (q) => q.eq("runId", runId)).collect();
+    let claims = 0;
+    for (const c of companies) {
+      for (const claim of await ctx.db.query("claims").withIndex("by_company", (q) => q.eq("companyId", c._id)).collect()) {
+        await ctx.db.delete(claim._id);
+        claims++;
+      }
+      for (const f of await ctx.db.query("followups").withIndex("by_company", (q) => q.eq("companyId", c._id)).collect()) await ctx.db.delete(f._id);
+      for (const vr of await ctx.db.query("verifications").withIndex("by_company", (q) => q.eq("companyId", c._id)).collect()) await ctx.db.delete(vr._id);
+      await ctx.db.delete(c._id);
+    }
+    const events = await ctx.db.query("events").withIndex("by_run", (q) => q.eq("runId", runId)).collect();
+    for (const e of events) await ctx.db.delete(e._id);
+    const run = await ctx.db.get(runId);
+    if (run) await ctx.db.delete(runId);
+    return { companies: companies.length, claims, events: events.length };
+  },
+});
+
 export const patch = internalMutation({
   args: {
     runId: v.id("runs"),

@@ -8,7 +8,7 @@ export const DEFAULT_THESIS =
   "Find promising early-stage AI infrastructure companies with credible evidence of enterprise adoption and recent momentum, and no massive late-stage financing yet.";
 
 export const DEFAULT_OBJECTIVE_HINT =
-  "Private, venture-backed companies at Seed to Series B, founded 2018 or later. Evidence of paying customers or named deployments. Recent momentum such as funding, launches, or notable hires in the last 18 months. Do not add sector constraints beyond those in the thesis.";
+  "Private, venture-backed companies at Seed to Series B. Some public sign of traction, such as customers, users, partnerships, or recent funding. Keep conditions few and lenient so that dozens of companies can satisfy all of them. Do not add sector constraints beyond those in the thesis.";
 
 const nullableString = (description: string) => ({
   type: ["string", "null"],
