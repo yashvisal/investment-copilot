@@ -74,7 +74,7 @@ export default function HowItWorks() {
           <PipelineGraph nodes={STEPS} />
         </div>
 
-        <section className="mt-16 grid grid-cols-1 gap-x-12 gap-y-6 border-t border-hairline pt-10 md:grid-cols-[1fr_auto]">
+        <section className="mt-32 grid grid-cols-1 gap-x-12 gap-y-6 border-t border-hairline pt-12 md:grid-cols-[1fr_auto]">
           <div>
             <h2 className="t-title text-ink-black">Every claim shows its work</h2>
             <p className="t-body mt-3 max-w-[560px] text-graphite">

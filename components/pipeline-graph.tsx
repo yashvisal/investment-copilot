@@ -55,7 +55,7 @@ export function PipelineGraph({ nodes }: { nodes: GraphNode[] }) {
       <Meta className="mt-3">Select a stage to read about it.</Meta>
 
       {s && (
-        <div className="mt-6 grid grid-cols-1 gap-x-12 gap-y-4 border-t border-hairline pt-6 md:grid-cols-[1fr_260px]">
+        <div className="mt-10 grid grid-cols-1 gap-x-12 gap-y-4 border-t border-hairline pt-8 md:grid-cols-[1fr_260px]">
           <div>
             <h2 className="t-title text-ink-black">{s.name}</h2>
             <p className="t-body mt-3 max-w-[600px] text-graphite">{s.what}</p>

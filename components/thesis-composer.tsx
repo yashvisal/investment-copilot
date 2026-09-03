@@ -92,7 +92,7 @@ export function ThesisComposer() {
           placeholder="Describe the companies you want to find"
           className="t-lead min-h-[36px] flex-1 bg-transparent px-2 py-1 text-ink-black outline-none placeholder:text-concrete"
         />
-        <Button type="submit" variant="dark" disabled={deriving || !thesis.trim()} className="w-24 shrink-0">
+        <Button type="submit" variant="dark" disabled={deriving || !thesis.trim()} className="w-24 shrink-0 disabled:opacity-100">
           {deriving ? "Planning" : "Plan"}
         </Button>
       </form>

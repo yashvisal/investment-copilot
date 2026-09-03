@@ -120,7 +120,7 @@ function Row({ runId, c }: { runId: Id<"runs">; c: Doc<"companies"> }) {
   return (
     <li
       onClick={() => router.push(href)}
-      className="group -mx-3 grid cursor-pointer grid-cols-1 gap-x-8 gap-y-3 rounded-sm px-3 py-4 transition-colors hover:bg-fog md:grid-cols-[240px_1fr_auto_16px] md:items-start"
+      className="group -mx-3 grid cursor-pointer grid-cols-1 gap-x-8 gap-y-3 rounded-sm px-3 py-4 transition-colors hover:bg-fog md:grid-cols-[240px_1fr_auto] md:items-start"
     >
       <div className="min-w-0">
         <Link href={href} className="t-body block font-medium text-ink-black group-hover:text-schematic-blue">
@@ -136,9 +136,6 @@ function Row({ runId, c }: { runId: Id<"runs">; c: Doc<"companies"> }) {
       <div className="md:pt-0.5" onClick={(e) => e.stopPropagation()}>
         <DecisionControl company={c} />
       </div>
-      <Meta className="hidden pt-1 text-concrete transition-colors group-hover:text-ink-black md:block" aria-hidden="true">
-        →
-      </Meta>
     </li>
   );
 }

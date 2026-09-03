@@ -123,14 +123,14 @@ export function CompanyView({ runId, companyId }: { runId: Id<"runs">; companyId
                       {c.label}
                     </a>
                   ))}
-                  <a href="#sources" className="t-small text-graphite hover:text-ink-black">
-                    Sources
-                  </a>
                   {discover.length > 0 && (
                     <a href="#discovery" className="t-small text-graphite hover:text-ink-black">
                       Discovery match
                     </a>
                   )}
+                  <a href="#sources" className="t-small text-graphite hover:text-ink-black">
+                    Sources
+                  </a>
                 </nav>
               </>
             )}
@@ -165,8 +165,8 @@ export function CompanyView({ runId, companyId }: { runId: Id<"runs">; companyId
               </article>
             )}
 
-            <Sources sources={sources} company={company} />
             <Discovery claims={discover} company={company} indexOf={indexOf} />
+            <Sources sources={sources} company={company} />
           </div>
         </div>
       </Page>
