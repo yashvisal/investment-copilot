@@ -24,7 +24,7 @@ export function PipelineGraph({ nodes }: { nodes: GraphNode[] }) {
   return (
     <div>
       <div
-        className="flex items-center overflow-x-auto rounded-sm border border-hairline bg-pure-white px-6 py-8"
+        className="flex items-center overflow-x-auto rounded-sm border border-hairline bg-pure-white px-10 py-16"
         style={{ backgroundImage: "radial-gradient(var(--color-hairline) 1px, transparent 1px)", backgroundSize: "16px 16px" }}
       >
         {nodes.map((n, i) => {

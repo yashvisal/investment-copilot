@@ -148,9 +148,8 @@ textarea:focus, input:focus {
   outline: none;
 }
 
-html, body {
+html {
   overscroll-behavior: none;
-  overflow-x: hidden;
 }
 textarea.autogrow {
   overflow: hidden;

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
@@ -107,6 +108,7 @@ function Shell({ children }: { children: string }) {
 /* ------------------------------------------------------------------ */
 
 function Row({ runId, c }: { runId: Id<"runs">; c: Doc<"companies"> }) {
+  const router = useRouter();
   const out = (c.screen?.output ?? {}) as Record<string, unknown>;
   const facts = [
     typeof out.latest_funding_round === "string" ? out.latest_funding_round : null,
@@ -114,10 +116,14 @@ function Row({ runId, c }: { runId: Id<"runs">; c: Doc<"companies"> }) {
     typeof out.founded_year === "number" ? `est. ${out.founded_year}` : null,
   ].filter(Boolean) as string[];
 
+  const href = `/runs/${runId}/companies/${c._id}`;
   return (
-    <li className="grid grid-cols-1 gap-x-8 gap-y-3 py-4 md:grid-cols-[240px_1fr_auto] md:items-start">
+    <li
+      onClick={() => router.push(href)}
+      className="group -mx-3 grid cursor-pointer grid-cols-1 gap-x-8 gap-y-3 rounded-sm px-3 py-4 transition-colors hover:bg-fog md:grid-cols-[240px_1fr_auto_16px] md:items-start"
+    >
       <div className="min-w-0">
-        <Link href={`/runs/${runId}/companies/${c._id}`} className="t-body block font-medium text-ink-black hover:text-schematic-blue">
+        <Link href={href} className="t-body block font-medium text-ink-black group-hover:text-schematic-blue">
           {c.name}
         </Link>
         <Meta className="truncate">{hostname(c.url)}</Meta>
@@ -127,9 +133,12 @@ function Row({ runId, c }: { runId: Id<"runs">; c: Doc<"companies"> }) {
         <p className="t-small text-graphite">{why(c)}</p>
         <Meta className="mt-1">{statusWord(c)}</Meta>
       </div>
-      <div className="md:pt-0.5">
+      <div className="md:pt-0.5" onClick={(e) => e.stopPropagation()}>
         <DecisionControl company={c} />
       </div>
+      <Meta className="hidden pt-1 text-concrete transition-colors group-hover:text-ink-black md:block" aria-hidden="true">
+        →
+      </Meta>
     </li>
   );
 }
