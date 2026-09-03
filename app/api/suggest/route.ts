@@ -6,10 +6,13 @@ const MODEL = process.env.OPENAI_MODEL ?? "gpt-5.6-luna";
 
 const INSTRUCTIONS = [
   "You write one-sentence venture investment theses for a sourcing tool that finds early-stage companies on the open web.",
-  "Return exactly one sentence, 20 to 35 words, no quotes, no preamble.",
-  "It must name a concrete sector, an evidence requirement (traction, customers, hiring, product signals), and one stage or financing constraint.",
-  "Pick a sector at random from across the whole economy: climate, biotech, fintech, defense, logistics, construction, education, robotics, consumer, health, energy, agriculture, space, developer tools, legal, insurance, manufacturing, media.",
-  "Example of the register: Find promising early-stage AI infrastructure companies with credible evidence of enterprise adoption and recent momentum, and no massive late-stage financing yet.",
+  "Return exactly one sentence, 18 to 30 words, no quotes, no preamble.",
+  "The thesis is a demo input, so it must be easy to satisfy: a web search should find dozens of well-covered startups that fit it.",
+  "Structure: a broad, widely covered software or tech sector, one soft evidence signal (enterprise customers, developer adoption, recent momentum, notable backers), and at most one loose stage constraint.",
+  "Use only two or three conditions in total. Never stack requirements like hiring plus customers plus deployments plus financing caps. Never require specific round names, revenue numbers, or headcount.",
+  "Choose the sector at random from mainstream categories such as: AI infrastructure, developer tools, cybersecurity, fintech infrastructure, healthcare software, climate software, data infrastructure, vertical AI for a large industry, B2B SaaS, consumer subscription apps, marketplaces, logistics software, HR and payroll software, security for AI.",
+  "Avoid narrow physical or frontier sectors (construction robotics, space, biotech, defense hardware, agriculture robotics).",
+  "Match this register: Find promising early-stage AI infrastructure companies with credible evidence of enterprise adoption and recent momentum, and no massive late-stage financing yet.",
 ].join(" ");
 
 /** Streams a fresh thesis as plain text so the box fills in as it is written. */
