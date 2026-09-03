@@ -3,7 +3,7 @@ import { internal } from "./_generated/api";
 import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
 import schema, { matchCondition, runStatus, stageStats } from "./schema";
 import { DEFAULT_ALLOCATION_USD, DEFAULT_CONTACT } from "./budget";
-import { DEFAULT_DILIGENCE_LIMIT, DEFAULT_SCREEN_LIMIT, STAGE_CONFIG, estimateRun } from "../lib/parallel/cost";
+import { DEFAULT_DILIGENCE_LIMIT, DEFAULT_SCREEN_LIMIT, MATCH_LIMIT_OPTIONS, STAGE_CONFIG, estimateRun } from "../lib/parallel/cost";
 
 const runDoc = schema.doc("runs");
 
@@ -72,8 +72,8 @@ export const start = mutation({
     }),
   ),
   handler: async (ctx, args) => {
-    if (![10, 15, 20, 25].includes(args.matchLimit)) {
-      throw new Error("matchLimit must be 10, 15, 20, or 25");
+    if (!(MATCH_LIMIT_OPTIONS as readonly number[]).includes(args.matchLimit)) {
+      throw new Error(`matchLimit must be one of ${MATCH_LIMIT_OPTIONS.join(", ")}`);
     }
     if (args.matchConditions.length === 0) {
       throw new Error("At least one match condition is required");

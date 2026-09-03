@@ -366,13 +366,17 @@ function Sources({ sources, company }: { sources: Source[]; company: Doc<"compan
   const verifications = useQuery(api.companies.verificationsFor, { companyId: company._id }) ?? [];
   const verify = useAction(api.pipeline.verifyCitation);
   const [verifying, setVerifying] = useState<string | null>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   if (sources.length === 0) return null;
 
   async function onVerify(s: Source) {
     setVerifying(s.url);
+    setVerifyError(null);
     try {
       await verify({ companyId: company._id, url: s.url, claimText: s.excerpts[0]?.slice(0, 300) ?? s.fields[0] });
+    } catch (e) {
+      setVerifyError(`Could not verify ${hostname(s.url)}: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setVerifying(null);
     }
@@ -382,6 +386,7 @@ function Sources({ sources, company }: { sources: Source[]; company: Doc<"compan
     <section id="sources" className="mt-16 scroll-mt-24 border-t border-hairline pt-8">
       <h2 className="t-title text-ink-black">Sources</h2>
       <Meta className="mt-1">Every number in brackets above points here. Verify fetches the page live and checks the passage is still there.</Meta>
+      {verifyError && <p className="t-small mt-3 text-status-red">{verifyError}</p>}
       <ol className="mt-5 space-y-3">
         {sources.map((s, i) => {
           const v = verifications.find((x) => x.url === s.url);

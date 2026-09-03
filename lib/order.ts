@@ -51,5 +51,10 @@ export function firstSentences(text: string, n: number): string {
 
 /** Drops a leading "Yes —", "No,", or similar verdict so prose reads as a statement, not a reply. */
 export function stripVerdictLead(text: string): string {
-  return text.replace(/^\s*(yes|no|absolutely|definitely|likely|probably)\b[\s,:;.!—–-]*/i, (m, w) => (m.length < text.length ? "" : w)).replace(/^\p{Ll}/u, (ch) => ch.toUpperCase());
+  // Only a reply-style lead: the word must be followed by verdict punctuation
+  // (dash, comma, colon, semicolon, period, or exclamation). "No public pricing
+  // is disclosed" has none and is left alone.
+  const stripped = text.replace(/^\s*(yes|no|absolutely|definitely)\s*[,:;.!—–-]+\s*/i, "");
+  if (stripped === text || stripped.length === 0) return text;
+  return stripped.replace(/^\p{Ll}/u, (ch) => ch.toUpperCase());
 }

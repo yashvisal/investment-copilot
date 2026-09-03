@@ -251,8 +251,20 @@ export function ThesisComposer({ preloadedCanonical }: { preloadedCanonical: Pre
       )}
 
       {block && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-black/40 p-6" onClick={() => setBlock(null)}>
-          <div className="w-full max-w-md rounded-sm border border-hairline bg-pure-white p-6 shadow-sm" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-black/40 p-6"
+          onClick={() => setBlock(null)}
+          onKeyDown={(e) => e.key === "Escape" && setBlock(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Run blocked"
+            tabIndex={-1}
+            ref={(el) => el?.focus()}
+            className="w-full max-w-md rounded-sm border border-hairline bg-pure-white p-6 shadow-sm outline-none"
+            onClick={(e) => e.stopPropagation()}
+          >
             <p className="t-body text-ink-black">{block.message}</p>
             {block.reason === "budget" && (
               <p className="t-body mt-3 text-graphite">

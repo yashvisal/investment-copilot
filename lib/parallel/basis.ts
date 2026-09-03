@@ -1,7 +1,7 @@
 import type { Claim, ClaimStage, Confidence, RawFieldBasis } from "./types";
 
 const CONFLICT_PATTERN =
-  /\b(conflict|conflicting|inconsistent|contradict|discrepan|differ(s|ing)? (between|across)|could not reconcile|unclear whether)\b/i;
+  /\b(conflict\w*|inconsisten\w*|contradict\w*|discrepanc\w*|differ(s|ing)? (between|across)|could not reconcile|unclear whether)\b/i;
 
 const UNKNOWN_STRINGS = new Set([
   "",
