@@ -151,20 +151,27 @@ textarea:focus, input:focus {
 html {
   overscroll-behavior: none;
 }
-/* One tracer, no gaps: grows out of the top-left corner to half the perimeter, then orbits at that length. */
-@keyframes trace-grow {
-  from { stroke-dasharray: 0 100; }
-  to { stroke-dasharray: 50 50; }
+/* One orange segment, half the perimeter long, orbiting the box from the top-left corner. */
+.trace-frame {
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  overflow: visible;
+}
+.trace-frame .trace {
+  x: 1px;
+  y: 1px;
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  rx: 2px;
+  fill: none;
+  stroke: var(--color-signal-orange);
+  stroke-width: 2px;
+  stroke-dasharray: 50 50;
+  stroke-dashoffset: 0;
+  animation: trace-orbit 1.8s linear infinite;
 }
 @keyframes trace-orbit {
   to { stroke-dashoffset: -100; }
-}
-.trace {
-  stroke-dasharray: 50 50;
-  stroke-dashoffset: 0;
-  animation:
-    trace-grow 0.9s ease-out both,
-    trace-orbit 1.8s linear 0.9s infinite;
 }
 
 textarea.autogrow {

@@ -163,25 +163,8 @@ export function ThesisComposer({ preloadedCanonical }: { preloadedCanonical: Pre
           <Wand />
         </Button>
         {suggesting && (
-          <svg
-            className="pointer-events-none absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] overflow-visible"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <rect
-              x="0"
-              y="0"
-              width="100"
-              height="100"
-              rx="0.5"
-              pathLength={100}
-              fill="none"
-              stroke="var(--color-signal-orange)"
-              strokeWidth="2"
-              vectorEffect="non-scaling-stroke"
-              className="trace"
-            />
+          <svg className="trace-frame pointer-events-none absolute -inset-px" aria-hidden="true">
+            <rect pathLength={100} className="trace" />
           </svg>
         )}
         <Button type="submit" variant="dark" disabled={deriving || !thesis.trim()} className="w-24 shrink-0 disabled:opacity-100">
