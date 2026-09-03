@@ -166,7 +166,7 @@ html {
   fill: none;
   stroke: var(--color-signal-orange);
   stroke-width: 2px;
-  stroke-dasharray: 50 50;
+  stroke-dasharray: 22 78;
   stroke-dashoffset: 0;
   animation: trace-orbit 1.8s linear infinite;
 }
