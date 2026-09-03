@@ -42,7 +42,7 @@ export function RunView({ runId }: { runId: Id<"runs"> }) {
   return (
     <>
       <Nav />
-      <Page width="wide">
+      <Page>
         <div className="max-w-[760px]">
           <Eyebrow>Thesis</Eyebrow>
           <h1 className="t-title mt-3 text-ink-black">{run.thesis}</h1>

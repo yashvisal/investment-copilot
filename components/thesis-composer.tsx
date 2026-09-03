@@ -9,7 +9,7 @@ import { usd } from "@/lib/format";
 import { DEFAULT_DILIGENCE_LIMIT, DEFAULT_SCREEN_LIMIT, MATCH_LIMIT_OPTIONS, estimateRun, type MatchLimit } from "@/lib/parallel/cost";
 import { DEFAULT_OBJECTIVE_HINT, DEFAULT_THESIS } from "@/lib/parallel/specs";
 import type { MatchCondition } from "@/lib/parallel/types";
-import { Button, Eyebrow, Meta, Wire, cx } from "./ui";
+import { AutoTextarea, Button, Eyebrow, Meta, Wire, cx } from "./ui";
 
 type Block = { reason: "budget" | "disabled" | "busy"; message: string; contact: string };
 
@@ -78,7 +78,7 @@ export function ThesisComposer() {
         }}
         className="flex items-end gap-3 rounded-sm border border-hairline bg-pure-white p-3 shadow-sm focus-within:border-ink-black"
       >
-        <textarea
+        <AutoTextarea
           value={thesis}
           onChange={(e) => setThesis(e.target.value)}
           onKeyDown={(e) => {
@@ -87,13 +87,13 @@ export function ThesisComposer() {
               void plan();
             }
           }}
-          rows={2}
+          rows={1}
           aria-label="Investment thesis"
           placeholder="Describe the companies you want to find"
-          className="t-lead min-h-[56px] flex-1 resize-none bg-transparent px-2 py-1 text-ink-black outline-none placeholder:text-concrete"
+          className="t-lead min-h-[36px] flex-1 bg-transparent px-2 py-1 text-ink-black outline-none placeholder:text-concrete"
         />
-        <Button type="submit" variant="dark" disabled={deriving || !thesis.trim()} className="shrink-0">
-          {deriving ? "Planning…" : planned && !stale ? "Replan" : "Plan"}
+        <Button type="submit" variant="dark" disabled={deriving || !thesis.trim()} className="w-24 shrink-0">
+          {deriving ? "Planning" : "Plan"}
         </Button>
       </form>
       <Meta className="mt-2">Free to plan. Nothing is spent until you run.</Meta>
@@ -109,11 +109,11 @@ export function ThesisComposer() {
             {conditions.map((c, i) => (
               <li key={c.name} className="flex gap-5 py-3">
                 <span className="t-mono tnum w-4 shrink-0 pt-0.5 text-slate">{i + 1}</span>
-                <textarea
+                <AutoTextarea
                   value={c.description}
-                  rows={2}
+                  rows={1}
                   onChange={(e) => setConditions(conditions.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))}
-                  className="t-body min-w-0 flex-1 resize-none bg-transparent text-ink-black outline-none"
+                  className="t-body min-w-0 flex-1 bg-transparent text-ink-black outline-none"
                 />
                 <button
                   className="t-mono self-start text-slate hover:text-status-red"

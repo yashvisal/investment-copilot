@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMutation } from "convex/react";
-import type { ComponentProps, ReactNode } from "react";
+import { useState, type ComponentProps, type ReactNode } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 import type { Classification, Decision } from "@/lib/parallel/types";
@@ -30,11 +30,9 @@ export function ButtonLink({ variant = "ghost", className, ...props }: Component
   return <Link className={cx(buttonBase, buttonVariants[variant], className)} {...props} />;
 }
 
-/** The content container. Narrow for writing, wide for browsing. */
-export function Page({ children, className, width = "narrow" }: { children: ReactNode; className?: string; width?: "narrow" | "wide" }) {
-  return (
-    <main className={cx("mx-auto w-full px-8 pb-32 pt-10", width === "narrow" ? "max-w-[760px]" : "max-w-[1120px]", className)}>{children}</main>
-  );
+/** The one content container. Same width on every page. */
+export function Page({ children, className }: { children: ReactNode; className?: string }) {
+  return <main className={cx("mx-auto w-full max-w-[1120px] px-8 pb-32 pt-10", className)}>{children}</main>;
 }
 
 export function Meta({ children, className }: { children: ReactNode; className?: string }) {
@@ -69,28 +67,60 @@ export function Spinner() {
 /* Decision control: the same three-way switch everywhere.             */
 /* ------------------------------------------------------------------ */
 
-export function DecisionControl({ company, size = "sm" }: { company: Doc<"companies">; size?: "sm" | "md" }) {
+export function DecisionControl({ company, size = "sm", showStatus = false }: { company: Doc<"companies">; size?: "sm" | "md"; showStatus?: boolean }) {
   const setDecision = useMutation(api.companies.setDecision);
+  // Optimistic value, valid only while the server value it was based on is unchanged.
+  const [local, setLocal] = useState<{ base: Decision | null; value: Decision | null } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const server = company.decision ?? null;
+  const current = local && local.base === server ? local.value : server;
+
+  async function choose(d: Decision) {
+    const nextValue = current === d ? null : d;
+    setLocal({ base: server, value: nextValue });
+    setError(null);
+    try {
+      await setDecision({ companyId: company._id, decision: nextValue });
+    } catch (e) {
+      setLocal(null);
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
   return (
-    <div className="inline-flex rounded-sm border border-hairline bg-pure-white p-0.5" role="group" aria-label="Your decision">
-      {(["pass", "watch", "deep_diligence"] as Decision[]).map((d) => (
-        <button
-          key={d}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            void setDecision({ companyId: company._id, decision: company.decision === d ? null : d });
-          }}
-          className={cx(
-            "t-mono-up rounded-[1px] transition-colors",
-            size === "sm" ? "h-7 px-2.5" : "h-8 px-3",
-            company.decision === d ? "bg-ink-black text-pure-white" : "text-graphite hover:bg-fog",
-          )}
-          aria-pressed={company.decision === d}
-        >
-          {DECISION_LABEL[d]}
-        </button>
-      ))}
+    <div>
+      <div className="inline-flex rounded-sm border border-hairline bg-pure-white p-0.5" role="group" aria-label="Your decision">
+        {(["pass", "watch", "deep_diligence"] as Decision[]).map((d) => {
+          const on = current === d;
+          return (
+            <button
+              key={d}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void choose(d);
+              }}
+              className={cx(
+                "t-mono-up rounded-[1px] transition-colors",
+                size === "sm" ? "h-7 px-2.5" : "h-8 px-3",
+                on
+                  ? d === "deep_diligence"
+                    ? "bg-signal-orange text-pure-white"
+                    : "bg-ink-black text-pure-white"
+                  : "text-graphite hover:bg-fog",
+              )}
+              aria-pressed={on}
+            >
+              {DECISION_LABEL[d]}
+            </button>
+          );
+        })}
+      </div>
+      {showStatus && (
+        <Meta className="mt-2">{error ? <span className="text-status-red">{error}</span> : current ? `Marked ${DECISION_LABEL[current]}` : "Not marked yet"}</Meta>
+      )}
+      {!showStatus && error && <Meta className="mt-1 text-status-red">{error}</Meta>}
     </div>
   );
 }
@@ -126,5 +156,31 @@ export function Wire({ nodes, className }: { nodes: WireNode[]; className?: stri
         </div>
       ))}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Auto-growing textarea: expands with content, never scrolls.         */
+/* ------------------------------------------------------------------ */
+
+export function AutoTextarea({ className, value, onChange, ...props }: ComponentProps<"textarea">) {
+  return (
+    <textarea
+      {...props}
+      value={value}
+      onChange={onChange}
+      onInput={(e) => {
+        const el = e.currentTarget;
+        el.style.height = "auto";
+        el.style.height = `${el.scrollHeight}px`;
+      }}
+      ref={(el) => {
+        if (el) {
+          el.style.height = "auto";
+          el.style.height = `${el.scrollHeight}px`;
+        }
+      }}
+      className={cx("autogrow", className)}
+    />
   );
 }

@@ -60,7 +60,7 @@ export function CompanyView({ runId, companyId }: { runId: Id<"runs">; companyId
   return (
     <>
       <Nav />
-      <Page width="wide">
+      <Page>
         {/* Run bar */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <ButtonLink href={`/runs/${runId}`} variant="ghost">
@@ -100,8 +100,9 @@ export function CompanyView({ runId, companyId }: { runId: Id<"runs">; companyId
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <Eyebrow>Your call</Eyebrow>
             <div className="mt-3">
-              <DecisionControl company={company} size="md" />
+              <DecisionControl company={company} size="md" showStatus />
             </div>
+            <Eyebrow className="mt-8">Alerts</Eyebrow>
             <WatchButton company={company} />
 
             <Eyebrow className="mt-10">Evidence</Eyebrow>
@@ -124,9 +125,6 @@ export function CompanyView({ runId, companyId }: { runId: Id<"runs">; companyId
                   ))}
                   <a href="#sources" className="t-small text-graphite hover:text-ink-black">
                     Sources
-                  </a>
-                  <a href="#followup" className="t-small text-graphite hover:text-ink-black">
-                    Ask a follow-up
                   </a>
                   {discover.length > 0 && (
                     <a href="#discovery" className="t-small text-graphite hover:text-ink-black">
@@ -168,7 +166,6 @@ export function CompanyView({ runId, companyId }: { runId: Id<"runs">; companyId
             )}
 
             <Sources sources={sources} company={company} />
-            <Followups company={company} />
             <Discovery claims={discover} company={company} indexOf={indexOf} />
           </div>
         </div>
@@ -226,7 +223,7 @@ function WatchButton({ company }: { company: Doc<"companies"> }) {
   return (
     <div className="mt-3">
       <Button variant="ghost" onClick={onWatch} disabled={busy} className="w-full">
-        {busy ? "Requesting…" : company.monitorId ? "Watching weekly" : "Watch weekly"}
+        {busy ? "Requesting…" : company.monitorId ? "Tracking changes" : "Track changes weekly"}
       </Button>
       {msg && <p className="t-small mt-2 text-graphite">{msg}</p>}
     </div>
@@ -434,72 +431,6 @@ function Sources({ sources, company }: { sources: Source[]; company: Doc<"compan
 }
 
 /* ------------------------------------------------------------------ */
-
-function Followups({ company }: { company: Doc<"companies"> }) {
-  const followups = useQuery(api.companies.followupsFor, { companyId: company._id }) ?? [];
-  const ask = useAction(api.pipeline.askFollowup);
-  const [question, setQuestion] = useState("");
-  const [asking, setAsking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function onAsk() {
-    if (!question.trim()) return;
-    setAsking(true);
-    setError(null);
-    try {
-      await ask({ companyId: company._id, question });
-      setQuestion("");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setAsking(false);
-    }
-  }
-
-  return (
-    <section id="followup" className="mt-16 scroll-mt-24 border-t border-hairline pt-8">
-      <h2 className="t-title text-ink-black">Ask a follow-up</h2>
-      <Meta className="mt-1">Answered from the live web with sources. About ten seconds and one cent.</Meta>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void onAsk();
-        }}
-        className="mt-5 flex gap-2"
-      >
-        <input
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Is this company gaining enterprise adoption?"
-          className="t-body h-9 min-w-0 flex-1 rounded-sm border border-hairline bg-pure-white px-3 text-ink-black outline-none focus:border-ink-black"
-        />
-        <Button type="submit" variant="dark" disabled={asking || !question.trim()}>
-          {asking ? "Researching…" : "Ask"}
-        </Button>
-      </form>
-      {error && <p className="t-small mt-2 text-status-red">{error}</p>}
-      <div className="mt-6 space-y-6">
-        {followups.map((f) => (
-          <div key={f._id}>
-            <p className="t-body font-medium text-ink-black">{f.question}</p>
-            <p className="t-body mt-1 text-graphite">{f.answer}</p>
-            <Meta className="tnum mt-1">
-              {f.confidence ? `${f.confidence} confidence` : ""} · {f.evidenceStatus} · {(f.latencyMs / 1000).toFixed(1)}s · {usd(f.costUsd)}
-              {f.citations.slice(0, 4).map((c) => (
-                <span key={c.url}>
-                  {" · "}
-                  <a href={c.url} target="_blank" rel="noreferrer" className="text-schematic-blue hover:underline">
-                    {hostname(c.url)}
-                  </a>
-                </span>
-              ))}
-            </Meta>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 
