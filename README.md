@@ -5,10 +5,7 @@ A thesis goes in. The few companies worth a deeper look come out, with every cla
 ## The pipeline
 
 ```
-Thesis ──▶ Discover ──▶ Prioritize ──▶ Screen ──▶ Diligence ──▶ Decide
-           FindAll      our code       Task Group   Task          you
-           core         free           core         pro
-           10–20        top 10         10           at most 4
+Thesis → Discover → Prioritize → Screen → Diligence → Decide
 ```
 
 Spend rises only as conviction does. Each stage narrows the field and costs a little more per company than the last, so the strongest processor only ever runs on the handful that earned it. A ten-company run costs about $4 and takes 15 to 25 minutes end to end.
