@@ -49,7 +49,13 @@ export function RunView({ runId }: { runId: Id<"runs"> }) {
           <Eyebrow>Thesis</Eyebrow>
           <h1 className="t-title mt-3 text-ink-black">{run.thesis}</h1>
         </div>
-        <Progress run={run} now={now} matched={ordered.length} onStop={() => void cancel({ runId: run._id })} />
+        <Progress
+          run={run}
+          now={now}
+          matched={ordered.length}
+          checked={(companies ?? []).filter((c) => c.matchStatus !== "generated").length}
+          onStop={() => void cancel({ runId: run._id })}
+        />
         {run.error && <p className="t-small mt-6 text-status-red">{run.error}</p>}
 
         {run.status === "discovering" && <DiscoveryFeed run={run} companies={companies ?? []} />}
@@ -77,7 +83,7 @@ export function RunView({ runId }: { runId: Id<"runs"> }) {
         {unmatched.length > 0 && run.status !== "discovering" && (
           <details className="mt-10">
             <summary className="t-mono cursor-pointer list-none text-slate hover:text-ink-black">
-              {unmatched.length} more evaluated at discovery and not matched
+              {unmatched.length} more found at discovery and not matched
             </summary>
             <ul className="mt-3 max-w-[760px] space-y-1.5">
               {unmatched.map((c) => (
@@ -105,7 +111,8 @@ const FEED_SIZE = 8;
 
 function DiscoveryFeed({ run, companies }: { run: Doc<"runs">; companies: Doc<"companies">[] }) {
   const recent = [...companies].sort((a, b) => b._creationTime - a._creationTime).slice(0, FEED_SIZE);
-  const evaluated = run.generatedCount ?? companies.length;
+  const found = run.generatedCount ?? companies.length;
+  const checked = companies.filter((c) => c.matchStatus !== "generated").length;
   const matched = companies.filter((c) => c.matchStatus === "matched").length;
 
   return (
@@ -114,7 +121,7 @@ function DiscoveryFeed({ run, companies }: { run: Doc<"runs">; companies: Doc<"c
         <div className="flex items-baseline gap-3">
           <h2 className="t-body font-medium text-ink-black">Candidates under review</h2>
           <Meta className="tnum">
-            {evaluated} evaluated · {matched} of {run.matchLimit} matched
+            {found} found · {checked} checked · {matched} of {run.matchLimit} matched
           </Meta>
         </div>
         <Meta>Matches move up into the board as they are confirmed.</Meta>
@@ -132,7 +139,9 @@ function DiscoveryFeed({ run, companies }: { run: Doc<"runs">; companies: Doc<"c
             <li key={c._id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 rounded-sm border border-hairline bg-pure-white px-4 py-3">
               <span className={cx("t-body font-medium", hit ? "text-ink-black" : "text-graphite")}>{c.name}</span>
               <Meta className="truncate">{hostname(c.url)}</Meta>
-              <Meta className={cx("ml-auto shrink-0", hit && "text-signal-orange")}>{hit ? "Matched" : (failedCondition(c) ?? "Not matched")}</Meta>
+              <Meta className={cx("ml-auto shrink-0", hit && "text-signal-orange")}>
+                {hit ? "Matched" : c.matchStatus === "generated" ? "Awaiting check" : (failedCondition(c) ?? "Not matched")}
+              </Meta>
             </li>
           );
         })}
@@ -247,7 +256,7 @@ function failedCondition(c: Doc<"companies">): string | null {
 
 /* ------------------------------------------------------------------ */
 
-function Progress({ run, now, matched, onStop }: { run: Doc<"runs">; now: number; matched: number; onStop: () => void }) {
+function Progress({ run, now, matched, checked, onStop }: { run: Doc<"runs">; now: number; matched: number; checked: number; onStop: () => void }) {
   const activeKey: StageKey | null =
     run.status === "discovering" ? "discover" : run.status === "prioritizing" ? "prioritize" : run.status === "screening" ? "screen" : run.status === "diligencing" ? "diligence" : null;
   const activeIdx = activeKey ? STAGE_ORDER.indexOf(activeKey) : run.status === "complete" ? 5 : -1;
@@ -272,7 +281,7 @@ function Progress({ run, now, matched, onStop }: { run: Doc<"runs">; now: number
   let line: string;
   if (run.status === "complete") line = `Complete. ${s.discover.count ?? 0} discovered, ${s.screen.count ?? 0} screened, ${s.diligence.count ?? 0} diligenced. Mark each finalist below.`;
   else if (run.status === "failed") line = "The run stopped. See the log below.";
-  else if (activeKey === "discover") line = `Discovering. ${matched} of ${run.matchLimit} matched, ${run.generatedCount ?? 0} candidates evaluated.`;
+  else if (activeKey === "discover") line = `Discovering. ${matched} of ${run.matchLimit} matched, ${checked} checked, ${run.generatedCount ?? 0} candidates found.`;
   else if (activeKey === "prioritize") line = "Ranking matches on their discovery evidence.";
   else if (activeKey === "screen") line = `Screening ${s.prioritize.count ?? 0} companies at once. ${stats?.count ?? 0} done.`;
   else if (activeKey === "diligence") line = `Deep briefs running for ${run.diligenceLimit} finalists at once. ${stats?.count ?? 0} done.`;
