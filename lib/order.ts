@@ -34,10 +34,19 @@ export function orderCompanies(companies: Doc<"companies">[]): Doc<"companies">[
     });
 }
 
+/**
+ * First n sentences, always starting from the beginning of the text. A period only
+ * ends a sentence when whitespace or the end follows it, so "Kore.ai" stays intact.
+ */
 export function firstSentences(text: string, n: number): string {
-  const parts = text.match(/[^.!?]+[.!?]+(\s|$)/g);
-  if (!parts) return text;
-  return parts.slice(0, n).join("").trim();
+  const ends = /[.!?]+(?=\s|$)/g;
+  let count = 0;
+  let m: RegExpExecArray | null;
+  while ((m = ends.exec(text))) {
+    count++;
+    if (count === n) return text.slice(0, m.index + m[0].length).trim();
+  }
+  return text.trim();
 }
 
 /** Drops a leading "Yes —", "No,", or similar verdict so prose reads as a statement, not a reply. */
