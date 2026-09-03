@@ -151,14 +151,20 @@ textarea:focus, input:focus {
 html {
   overscroll-behavior: none;
 }
-/* A dash that runs clockwise around a box, starting top-left. Used while a suggestion streams in. */
-@keyframes trace {
+/* One tracer, no gaps: grows out of the top-left corner to half the perimeter, then orbits at that length. */
+@keyframes trace-grow {
+  from { stroke-dasharray: 0 100; }
+  to { stroke-dasharray: 50 50; }
+}
+@keyframes trace-orbit {
   to { stroke-dashoffset: -100; }
 }
 .trace {
-  stroke-dasharray: 28 72;
+  stroke-dasharray: 50 50;
   stroke-dashoffset: 0;
-  animation: trace 1.6s linear infinite;
+  animation:
+    trace-grow 0.9s ease-out both,
+    trace-orbit 1.8s linear 0.9s infinite;
 }
 
 textarea.autogrow {
