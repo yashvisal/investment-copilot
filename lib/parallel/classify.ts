@@ -1,9 +1,12 @@
 import type { Claim, Classification } from "./types";
 
-const LATE_STAGE_ROUNDS = /series\s*[c-h]|growth|pre-ipo|mezzanine|late[- ]stage/i;
-const LATE_STAGE_TOTAL_USD_M = 150;
+/**
+ * Only things that make a company un-investable regardless of thesis, plus an
+ * explicit sector miss. Stage, size, and public listing are never disqualifiers
+ * here; the thesis decides what stage it wants.
+ */
 const HARD_DISQUALIFIER =
-  /\b(acquired|acquisition by|shut ?down|ceased operations|publicly[- ]traded|public company|\bipo\b|series\s*[c-h]\b|growth[- ]stage|growth (round|investment)|late[- ]stage|consumer (product|app)|vertical (ai )?(application|app|workflow|solution)|not (an? )?(ai )?infrastructure|business unit|subsidiary|division of|more than \$?150|over \$?150)/i;
+  /\b(disqualified:|acquired|acquisition by|shut ?down|ceased operations|business unit|subsidiary|division of|outside the (sector|category|thesis)|does not (fit|match|operate in) the (sector|category|thesis)|not (an? )?(\w+ )?(company|startup) in the (sector|category))/i;
 
 export interface ClassificationResult {
   classification: Classification;
@@ -39,15 +42,7 @@ export function classifyScreen(claims: Claim[]): ClassificationResult {
     softConcern = true;
   }
   const roundText = round && !round.isUnknown ? String(round.value) : "";
-  if (LATE_STAGE_ROUNDS.test(roundText)) {
-    reasons.push(`Late-stage round (${roundText})`);
-    return { classification: "pass", reasons, strength: 0 };
-  }
   const totalNum = total && typeof total.value === "number" ? total.value : null;
-  if (totalNum !== null && totalNum > LATE_STAGE_TOTAL_USD_M) {
-    reasons.push(`Total raised $${totalNum}M exceeds the $${LATE_STAGE_TOTAL_USD_M}M ceiling`);
-    return { classification: "pass", reasons, strength: 0 };
-  }
   if (sells && sells.isUnknown) {
     reasons.push("Could not establish what the company sells");
     return { classification: "pass", reasons, strength: 0 };

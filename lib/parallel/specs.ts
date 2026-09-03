@@ -5,10 +5,7 @@
  */
 
 export const DEFAULT_THESIS =
-  "Find promising early-stage AI infrastructure companies with credible evidence of enterprise adoption and recent momentum, and no massive late-stage financing yet.";
-
-export const DEFAULT_OBJECTIVE_HINT =
-  "Private, venture-backed companies at Seed to Series B. Some public sign of traction, such as customers, users, partnerships, or recent funding. Keep conditions few and lenient so that dozens of companies can satisfy all of them. Do not add sector constraints beyond those in the thesis.";
+  "Find promising AI infrastructure companies with credible evidence of enterprise adoption and recent momentum.";
 
 const nullableString = (description: string) => ({
   type: ["string", "null"],
@@ -25,7 +22,7 @@ const stringArray = (description: string) => ({
 export const SCREEN_OUTPUT_SCHEMA = {
   type: "object",
   description:
-    "Lightweight screen of a private company against an investment thesis. Prefer primary sources (company site, press releases, customer case studies, funding announcements). Return null for any field lacking credible evidence rather than guessing.",
+    "Lightweight screen of a company against an investment thesis. The company may be private or public, at any stage. Prefer primary sources (company site, press releases, customer case studies, funding announcements). Return null for any field lacking credible evidence rather than guessing.",
   properties: {
     what_it_sells: nullableString(
       "One or two sentences on the product the company actually sells today and how it is delivered (API, platform, hardware, open source with paid tier). If unclear, return null.",
@@ -59,7 +56,7 @@ export const SCREEN_OUTPUT_SCHEMA = {
       description: "Year founded as a four-digit number. If unknown, return null.",
     },
     thesis_concern: nullableString(
-      "Report ONLY a hard disqualifier, and only if credible sources show it: the company was acquired or shut down; it is publicly traded; its latest round is Series C or later or it has raised more than $150M; it primarily sells a consumer product; it is a vertical AI application rather than AI infrastructure; or it is a business unit rather than an independent company. Name which disqualifier applies in the first sentence. Do NOT report weak traction, stale momentum, missing data, or uncertainty here; those belong in the other fields. If no hard disqualifier applies, return null.",
+      "Report ONLY a hard disqualifier relative to the thesis given in the input, and only if credible sources show it: the company was acquired or shut down; it is a business unit or subsidiary rather than an independent company; or it clearly operates outside the sector or category the thesis describes. Begin with the words 'Disqualified:' and name which applies. Stage, funding size, and being publicly traded are NOT disqualifiers unless the thesis itself requires early-stage or private companies. Do NOT report weak traction, stale momentum, missing data, or uncertainty here; those belong in the other fields. If no hard disqualifier applies, return null.",
     ),
   },
   required: [
@@ -106,7 +103,7 @@ export const SCREEN_INPUT_SCHEMA = {
 export const DILIGENCE_OUTPUT_SCHEMA = {
   type: "object",
   description:
-    "Pre-diligence brief on a private company for an early-stage investor evaluating an AI infrastructure thesis. Every claim must be grounded in credible sources; prefer primary sources and reputable press. Where evidence is missing or conflicting, say so explicitly and return null rather than inferring. Cover the last 18 months in detail.",
+    "Pre-diligence brief on a company for an investor evaluating the stated investment thesis. The company may be private or public, at any stage. Every claim must be grounded in credible sources; prefer primary sources and reputable press. Where evidence is missing or conflicting, say so explicitly and return null rather than inferring. Cover the last 18 months in detail.",
   properties: {
     product_and_differentiation: nullableString(
       "What the product is, the technical approach, and what concretely differentiates it from alternatives. Three to five sentences.",

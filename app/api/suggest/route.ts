@@ -8,10 +8,10 @@ const INSTRUCTIONS = [
   "You write one-sentence venture investment theses for a sourcing tool that finds early-stage companies on the open web.",
   "Return exactly one sentence, 18 to 30 words, starting with the word Find, no quotes, no preamble.",
   "The thesis is a demo input, so it must be easy to satisfy: at least 30 well-covered startups should fit every clause, so a search can comfortably return 10 to 20 matches.",
-  "Structure: a broad, widely covered software sector, one soft traction signal, and one loose stage phrase. That is all. Three clauses maximum.",
-  "Every clause must be lenient. Say 'signs of' or 'early' rather than 'proven' or 'evidence of'. Never require paying customers, enterprise deployments, hiring, named investors, round names, revenue numbers, or headcount.",
+  "Structure: a broad, widely covered software sector and one soft traction signal. That is all. Two clauses maximum. Do not add stage, size, or financing constraints; public and late-stage companies are welcome.",
+  "Every clause must be lenient. Say 'signs of' rather than 'proven' or 'evidence of'. Never require paying customers, enterprise deployments, hiring, named investors, round names, revenue numbers, or headcount.",
   "Use the sector and evidence signal you are given. Do not swap them for another sector.",
-  "Register to match, but do not copy its wording: Find promising early-stage AI infrastructure companies with credible evidence of enterprise adoption and recent momentum, and no massive late-stage financing yet.",
+  "Register to match, but do not copy its wording: Find promising AI infrastructure companies with signs of enterprise adoption and recent momentum.",
 ].join(" ");
 
 /* The server picks the ingredients so a reasoning-free model still varies the output. */
@@ -44,12 +44,6 @@ const SIGNALS = [
   "signs of growing adoption",
 ];
 
-const STAGES = [
-  "no massive late-stage financing yet",
-  "still early-stage",
-  "not yet at growth stage",
-];
-
 function pick<T>(xs: T[]): T {
   return xs[Math.floor(Math.random() * xs.length)];
 }
@@ -67,8 +61,7 @@ export async function POST(req: Request) {
     instructions: INSTRUCTIONS,
     input: [
       `Sector: ${pick(SECTORS.filter((s) => !avoid?.toLowerCase().includes(s.toLowerCase())))}.`,
-      `Evidence signal: ${pick(SIGNALS)}.`,
-      `Stage constraint: ${pick(STAGES)}.`,
+      `Traction signal: ${pick(SIGNALS)}.`,
       avoid ? `Do not reuse the wording of this earlier thesis: ${avoid}` : "",
       "Write the thesis.",
     ]

@@ -1,6 +1,6 @@
 # Investment Copilot
 
-Turn an investment thesis into the few private companies actually worth a deeper look. Built on [Parallel](https://parallel.ai) FindAll, Task, Responses, Extract, and Monitor, with Convex for run state and Next.js on Vercel.
+Turn an investment thesis into the few companies actually worth a deeper look. Built on [Parallel](https://parallel.ai) FindAll, Task, Responses, Extract, and Monitor, with Convex for run state and Next.js on Vercel.
 
 The product is not an autonomous investor. It compresses the hours an investor spends searching the open web before deciding whether a company deserves real diligence, and it shows its evidence at every step.
 

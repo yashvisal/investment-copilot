@@ -19,7 +19,7 @@ const mono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Investment Copilot",
   description:
-    "Turn an investment thesis into a researched shortlist of private companies worth a deeper look.",
+    "Turn an investment thesis into a researched shortlist of companies worth a deeper look.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import { usd } from "@/lib/format";
 import { DEFAULT_DILIGENCE_LIMIT, DEFAULT_SCREEN_LIMIT, MATCH_LIMIT_OPTIONS, estimateRun, type MatchLimit } from "@/lib/parallel/cost";
-import { DEFAULT_OBJECTIVE_HINT, DEFAULT_THESIS } from "@/lib/parallel/specs";
+import { DEFAULT_THESIS } from "@/lib/parallel/specs";
 import type { MatchCondition } from "@/lib/parallel/types";
 import { AutoTextarea, Button, Eyebrow, Meta, Wire, cx } from "./ui";
 
@@ -63,7 +63,8 @@ export function ThesisComposer({ preloadedCanonical }: { preloadedCanonical: Pre
   );
   const screenN = Math.min(DEFAULT_SCREEN_LIMIT, matchLimit);
   const byStage = Object.fromEntries(estimate.stages.map((s) => [s.stage, s.costUsd]));
-  const objective = `${thesis.trim()} ${DEFAULT_OBJECTIVE_HINT}`;
+  // The thesis is the whole objective. No hidden constraints are appended.
+  const objective = thesis.trim();
   const stale = planned !== null && planned !== thesis.trim();
 
   async function plan() {
