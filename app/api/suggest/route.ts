@@ -10,10 +10,51 @@ const INSTRUCTIONS = [
   "The thesis is a demo input, so it must be easy to satisfy: a web search should find dozens of well-covered startups that fit it.",
   "Structure: a broad, widely covered software or tech sector, one soft evidence signal (enterprise customers, developer adoption, recent momentum, notable backers), and at most one loose stage constraint.",
   "Use only two or three conditions in total. Never stack requirements like hiring plus customers plus deployments plus financing caps. Never require specific round names, revenue numbers, or headcount.",
-  "Choose the sector at random from mainstream categories such as: AI infrastructure, developer tools, cybersecurity, fintech infrastructure, healthcare software, climate software, data infrastructure, vertical AI for a large industry, B2B SaaS, consumer subscription apps, marketplaces, logistics software, HR and payroll software, security for AI.",
-  "Avoid narrow physical or frontier sectors (construction robotics, space, biotech, defense hardware, agriculture robotics).",
-  "Match this register: Find promising early-stage AI infrastructure companies with credible evidence of enterprise adoption and recent momentum, and no massive late-stage financing yet.",
+  "Use the sector and evidence signal you are given. Do not swap them for another sector.",
+  "Register to match, but do not copy its wording: Find promising early-stage AI infrastructure companies with credible evidence of enterprise adoption and recent momentum, and no massive late-stage financing yet.",
 ].join(" ");
+
+/* The server picks the ingredients so a reasoning-free model still varies the output. */
+const SECTORS = [
+  "AI infrastructure",
+  "developer tools",
+  "cybersecurity",
+  "fintech infrastructure",
+  "healthcare software",
+  "climate software",
+  "data infrastructure",
+  "AI agents for enterprises",
+  "B2B SaaS for finance teams",
+  "legal technology",
+  "supply chain software",
+  "HR and payroll software",
+  "security for AI systems",
+  "sales and marketing automation",
+  "insurance technology",
+  "AI for customer support",
+  "observability and DevOps",
+  "AI coding tools",
+];
+
+const SIGNALS = [
+  "credible evidence of enterprise customers",
+  "strong developer adoption",
+  "recent product momentum",
+  "backing from well-known investors",
+  "visible enterprise traction in the last year",
+  "a growing paying customer base",
+];
+
+const STAGES = [
+  "no massive late-stage financing yet",
+  "still at seed or Series A",
+  "not yet past Series B",
+  "no growth-stage round yet",
+];
+
+function pick<T>(xs: T[]): T {
+  return xs[Math.floor(Math.random() * xs.length)];
+}
 
 /** Streams a fresh thesis as plain text so the box fills in as it is written. */
 export async function POST(req: Request) {
@@ -26,7 +67,15 @@ export async function POST(req: Request) {
     model: MODEL,
     reasoning: { effort: "none" },
     instructions: INSTRUCTIONS,
-    input: avoid ? `Write a different thesis. Do not reuse this sector or wording: ${avoid}` : "Write a thesis.",
+    input: [
+      `Sector: ${pick(SECTORS.filter((s) => !avoid?.toLowerCase().includes(s.toLowerCase())))}.`,
+      `Evidence signal: ${pick(SIGNALS)}.`,
+      `Stage constraint: ${pick(STAGES)}.`,
+      avoid ? `Do not reuse the wording of this earlier thesis: ${avoid}` : "",
+      "Write the thesis.",
+    ]
+      .filter(Boolean)
+      .join(" "),
     stream: true,
   });
 
