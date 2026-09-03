@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
 import { elapsed, hostname, millions, timeOfDay, usd } from "@/lib/format";
 import { BUCKET_LABEL, bucketOf, firstSentences, orderCompanies, stripVerdictLead, type Bucket } from "@/lib/order";
-import { Button, CLASS_LABEL, DecisionControl, Empty, Eyebrow, Meta, Page, Skeleton, SkeletonCard, Spinner, Wire, cx, type WireNode } from "./ui";
+import { CLASS_LABEL, DecisionControl, Empty, Eyebrow, Meta, Page, Skeleton, SkeletonCard, Spinner, Wire, cx, type WireNode } from "./ui";
 import { Nav } from "./nav";
 
 type StageKey = "discover" | "prioritize" | "screen" | "diligence";
@@ -30,7 +30,6 @@ export function RunView({ runId }: { runId: Id<"runs"> }) {
   const run = useQuery(api.runs.get, { runId });
   const companies = useQuery(api.companies.forRun, { runId });
   const events = useQuery(api.events.forRun, { runId });
-  const cancel = useMutation(api.runs.cancel);
   const active = !!run && run.status !== "complete" && run.status !== "failed";
   const now = useNow(active);
   const ordered = useMemo(() => orderCompanies(companies ?? []), [companies]);
@@ -54,7 +53,6 @@ export function RunView({ runId }: { runId: Id<"runs"> }) {
           now={now}
           matched={ordered.length}
           checked={(companies ?? []).filter((c) => c.matchStatus !== "generated").length}
-          onStop={() => void cancel({ runId: run._id })}
         />
         {run.error && <p className="t-small mt-6 text-status-red">{run.error}</p>}
 
@@ -255,7 +253,7 @@ function failedCondition(c: Doc<"companies">): string | null {
 
 /* ------------------------------------------------------------------ */
 
-function Progress({ run, now, matched, checked, onStop }: { run: Doc<"runs">; now: number; matched: number; checked: number; onStop: () => void }) {
+function Progress({ run, now, matched, checked }: { run: Doc<"runs">; now: number; matched: number; checked: number }) {
   const activeKey: StageKey | null =
     run.status === "discovering" ? "discover" : run.status === "prioritizing" ? "prioritize" : run.status === "screening" ? "screen" : run.status === "diligencing" ? "diligence" : null;
   const activeIdx = activeKey ? STAGE_ORDER.indexOf(activeKey) : run.status === "complete" ? 5 : -1;
@@ -293,17 +291,10 @@ function Progress({ run, now, matched, checked, onStop }: { run: Doc<"runs">; no
         {activeKey && <Spinner />}
         <span>{line}</span>
       </p>
-      <div className="mt-1 flex flex-wrap items-center justify-between gap-4">
-        <Meta className="tnum">
-          {activeKey && stats?.startedAt ? `${STAGE_LABEL[activeKey]} for ${elapsed(stats.startedAt, undefined, now)} · ` : ""}
-          {usd(run.spendUsd)} spent of {usd(run.estimatedCostUsd)} estimated
-        </Meta>
-        {activeKey && (
-          <Button variant="ghost" onClick={onStop} className="h-7 px-3">
-            Stop run
-          </Button>
-        )}
-      </div>
+      <Meta className="tnum mt-1">
+        {activeKey && stats?.startedAt ? `${STAGE_LABEL[activeKey]} for ${elapsed(stats.startedAt, undefined, now)} · ` : ""}
+        {usd(run.spendUsd)} spent of {usd(run.estimatedCostUsd)} estimated
+      </Meta>
     </div>
   );
 }
