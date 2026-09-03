@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { ButtonLink, Skeleton, cx } from "./ui";
+import { ButtonLink, Skeleton, buttonBase, buttonVariants, cx } from "./ui";
 
 export function Nav() {
   const budget = useQuery(api.budget.get);
@@ -23,9 +23,17 @@ export function Nav() {
           <ButtonLink href="/runs" variant="ghost" className={cx(path.startsWith("/runs") && "bg-fog")}>
             Runs
           </ButtonLink>
-          <ButtonLink href="/how-it-works" variant="dark">
+          <ButtonLink href="/how-it-works" variant="orange">
             How it works
           </ButtonLink>
+          <a
+            href="https://github.com/yashvisal/investment-copilot"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cx(buttonBase, buttonVariants.dark)}
+          >
+            GitHub
+          </a>
         </div>
       </div>
     </header>

@@ -13,10 +13,10 @@ export function cx(...parts: Array<string | false | null | undefined>): string {
 
 type ButtonVariant = "dark" | "orange" | "ghost";
 
-const buttonBase =
+export const buttonBase =
   "t-mono-up inline-flex h-9 items-center justify-center gap-2 rounded-sm px-4 transition-colors disabled:cursor-not-allowed disabled:opacity-40";
 
-const buttonVariants: Record<ButtonVariant, string> = {
+export const buttonVariants: Record<ButtonVariant, string> = {
   dark: "bg-ink-black text-pure-white hover:bg-graphite",
   orange: "bg-signal-orange text-pure-white hover:brightness-95",
   ghost: "border border-hairline bg-pure-white text-ink-black hover:bg-fog",
