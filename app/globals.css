@@ -140,13 +140,17 @@ body {
 html {
   scrollbar-gutter: stable;
 }
-:focus-visible {
-  outline: 2px solid var(--color-schematic-blue);
+:focus-visible:not(textarea, input) {
+  outline: 2px solid var(--color-ink-black);
   outline-offset: 2px;
+}
+textarea:focus, input:focus {
+  outline: none;
 }
 
 html, body {
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
+  overflow-x: hidden;
 }
 textarea.autogrow {
   overflow: hidden;

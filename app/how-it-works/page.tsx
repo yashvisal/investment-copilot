@@ -64,13 +64,13 @@ export default function HowItWorks() {
     <>
       <Nav />
       <Page>
-        <h1 className="t-display mt-8 max-w-[620px] text-ink-black">Spend rises only as conviction does.</h1>
-        <p className="t-lead mt-5 max-w-[600px] text-graphite">
-          A thesis goes in. Each stage narrows the field and costs a little more per company than the last, so the deepest research
-          only happens on the few that earned it. A ten-company run is about $4.
+        <h1 className="t-display max-w-[620px] text-ink-black">Spend rises only as conviction does.</h1>
+        <p className="t-lead mt-5 max-w-[620px] text-graphite">
+          Each stage narrows the field and spends a little more per company than the last, so the deepest research only reaches
+          the few that earned it.
         </p>
 
-        <div className="mt-12">
+        <div className="mt-10">
           <PipelineGraph nodes={STEPS} />
         </div>
 

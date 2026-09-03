@@ -19,7 +19,7 @@ export function ThesisComposer() {
   const start = useMutation(api.runs.start);
   const canonical = useQuery(api.runs.canonical);
 
-  const [thesis, setThesis] = useState(DEFAULT_THESIS);
+  const [thesis, setThesis] = useState("");
   const [planned, setPlanned] = useState<string | null>(null);
   const [matchLimit, setMatchLimit] = useState<MatchLimit>(10);
   const [conditions, setConditions] = useState<MatchCondition[] | null>(null);
@@ -96,7 +96,14 @@ export function ThesisComposer() {
           {deriving ? "Planning" : "Plan"}
         </Button>
       </form>
-      <Meta className="mt-2">Free to plan. Nothing is spent until you run.</Meta>
+      <Meta className="mt-2 flex flex-wrap gap-x-3">
+        <span>Free to plan. Nothing is spent until you run.</span>
+        {!thesis.trim() && (
+          <button type="button" className="text-ink-black hover:text-schematic-blue" onClick={() => setThesis(DEFAULT_THESIS)}>
+            Try an example
+          </button>
+        )}
+      </Meta>
       {error && <p className="t-small mt-3 text-status-red">{error}</p>}
 
       {conditions && planned && (

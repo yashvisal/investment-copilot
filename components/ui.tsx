@@ -32,7 +32,7 @@ export function ButtonLink({ variant = "ghost", className, ...props }: Component
 
 /** The one content container. Same width on every page. */
 export function Page({ children, className }: { children: ReactNode; className?: string }) {
-  return <main className={cx("mx-auto w-full max-w-[1120px] px-8 pb-32 pt-10", className)}>{children}</main>;
+  return <main className={cx("mx-auto w-full max-w-[1120px] px-8 pb-32 pt-16", className)}>{children}</main>;
 }
 
 export function Meta({ children, className }: { children: ReactNode; className?: string }) {
@@ -57,6 +57,13 @@ export const DECISION_LABEL: Record<Decision, string> = {
   pass: "Pass",
   watch: "Watch",
   deep_diligence: "Deep diligence",
+};
+
+/** Pass is black, Watch is blue, Deep diligence is orange. Same everywhere. */
+const DECISION_FILL: Record<Decision, string> = {
+  pass: "bg-ink-black text-pure-white",
+  watch: "bg-schematic-blue text-pure-white",
+  deep_diligence: "bg-signal-orange text-pure-white",
 };
 
 export function Spinner() {
@@ -104,11 +111,7 @@ export function DecisionControl({ company, size = "sm", showStatus = false }: { 
               className={cx(
                 "t-mono-up rounded-[1px] transition-colors",
                 size === "sm" ? "h-7 px-2.5" : "h-8 px-3",
-                on
-                  ? d === "deep_diligence"
-                    ? "bg-signal-orange text-pure-white"
-                    : "bg-ink-black text-pure-white"
-                  : "text-graphite hover:bg-fog",
+                on ? DECISION_FILL[d] : "text-graphite hover:bg-fog",
               )}
               aria-pressed={on}
             >
